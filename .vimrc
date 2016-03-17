@@ -52,5 +52,6 @@ vnoremap // y/<C-R>"<Return>
 noremap <F11> :tabnew<Return>:CtrlP<Return> 
 noremap <F12> `
 noremap \ :CtrlP<Return> 
+noremap c lC<Esc>
 
 set runtimepath^=~/.vim/bundle/ctrlp.vim
