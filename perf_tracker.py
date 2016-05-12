@@ -13,6 +13,23 @@ db = os.environ['PERF_MYSQL_DB']
 End of Input Configuration
 """
 
+"""
+Table Deployment
+
+    create database report;
+
+    use report;
+
+    create table trace (
+        tag text NOT NULL,
+        time_taken int(10) NOT NULL,
+        request_id int(10) NOT NULL,
+        entry_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+
+    select avg(time_taken), tag from trace group by tag;
+"""
+
 app = Flask('smprf')
 
 db = MySQLdb.connect(host, user, password, db)
