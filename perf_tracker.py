@@ -27,6 +27,11 @@ Table Deployment
         entry_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
 
+    drop view if exists perf;
+
+    CREATE VIEW perf AS
+        select avg(time_taken) as avg_time, tag as tag from trace group by tag order by avg_time desc;
+
     select avg(time_taken), tag from trace group by tag;
 """
 
