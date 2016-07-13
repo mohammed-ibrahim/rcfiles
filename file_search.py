@@ -25,6 +25,10 @@ def get_term():
     if len(sys.argv) == 3:
         directory = sys.argv[2]
 
+    if (os.path.isdir(directory) == False):
+        print("Invalid directory: " + directory)
+        sys.exit()
+
     return (sys.argv[1], directory)
 
 if __name__ == '__main__':
