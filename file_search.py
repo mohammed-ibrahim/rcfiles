@@ -3,13 +3,13 @@ import sys
 import re
 
 def search(term, directory):
-    term = build_term(term)
+    expr = re.compile(build_term(term), re.M|re.I)
     for root, directories, filenames in os.walk(directory):
         for directory in directories:
-            if (re.match(term, directory, re.M|re.I) != None):
+            if (expr.match(directory) != None):
                 print(os.path.join(root, directory))
         for filename in filenames:
-            if (re.match(term, filename, re.M|re.I) != None):
+            if (expr.match(filename) != None):
                 print(os.path.join(root,filename))
     return
 
