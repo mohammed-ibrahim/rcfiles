@@ -3,14 +3,14 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 alias gg='java -cp ~/www/work/execs/clip.jar ClipClient 10.0.1.1 7777'
-alias json='python ~/www/work/execs/jsonlint.py'
+alias json="python $RC_DIR_SETUP_LOC/jsonlint.py"
 alias convert='python ~/www/work/execs/convert/convert.py'
 alias c='clear'
 alias lr='ls -ltr'
 alias sr='find . -iname'
 alias p='pushd'
 alias o='popd'
-alias s='python ~/www/work/execs/file_search.py'
+alias s="python $RC_DIR_SETUP_LOC/file_search.py"
 alias ms='mysql -root fabric --execute '
 
 PS1='\W\$ '
