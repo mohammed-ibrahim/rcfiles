@@ -1,0 +1,25 @@
+#Custom aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias gg='java -cp ~/www/work/execs/clip.jar ClipClient 10.0.1.1 7777'
+alias json='python ~/www/work/execs/jsonlint.py'
+alias convert='python ~/www/work/execs/convert/convert.py'
+alias c='clear'
+alias lr='ls -ltr'
+alias sr='find . -iname'
+alias save='tar -czf /home/vagrant/www/backup/backup_$(uuidgen).tar'
+alias p='pushd'
+alias o='popd'
+
+PS1='\W\$ '
+
+au() {
+    if [ "$#" -eq 1 ]; then
+        sed -n -e $1'{p;q}' | tee /dev/tty | gg > /dev/null
+    fi
+
+    if [ "$#" -eq 0 ]; then
+        paste -s -d' ' | tee /dev/tty | gg > /dev/null
+    fi
+}
