@@ -11,6 +11,7 @@ alias sr='find . -iname'
 alias save='tar -czf /home/vagrant/www/backup/backup_$(uuidgen).tar'
 alias p='pushd'
 alias o='popd'
+alias s='python ~/www/work/execs/file_search.py'
 
 PS1='\W\$ '
 
