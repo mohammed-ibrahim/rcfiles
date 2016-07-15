@@ -2,7 +2,7 @@
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
-alias gg='java -cp ~/www/work/execs/clip.jar ClipClient 10.0.1.1 7777'
+alias gg='java -cp $RC_DIR_SETUP_LOC/clip.jar ClipClient 10.0.1.1 7777'
 alias json="python $RC_DIR_SETUP_LOC/jsonlint.py"
 alias convert='python ~/www/work/execs/convert/convert.py'
 alias c='clear'
