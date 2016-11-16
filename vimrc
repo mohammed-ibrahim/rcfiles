@@ -6,6 +6,7 @@ set expandtab
 set hlsearch
 set wildmenu
 set wildignore=*.pyc,*.pyo,*.class
+set autoread
 "filetype plugin indent on
 
 au BufRead,BufNewFile *.scala         setfiletype scala
@@ -40,8 +41,9 @@ inoremap <F3> <Esc><C-w><C-w>i
 noremap ! *
 noremap <F10> `a
 noremap <F9> ma
-noremap <F6> :sh<Return>
-inoremap <F6> <Esc>:sh<Return>
+noremap <F5> :e ~/index<Return>/
+inoremap <F5> :e ~/index<Return>/
+noremap <F6> gf
 noremap <Space> i<Space><Esc><Right>
 noremap Q viwy
 noremap A a
@@ -55,3 +57,7 @@ noremap \ :CtrlP<Return>
 noremap c C<Esc>
 
 set runtimepath^=~/.vim/bundle/ctrlp.vim
+let g:ctrlp_regexp = 1
+let g:ctrlp_by_filename = 1
+"set incsearch
+"set ignorecase
