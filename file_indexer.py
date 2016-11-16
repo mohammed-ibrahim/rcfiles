@@ -35,7 +35,7 @@ class DirectoryIndexer(object):
 
 def index(search_dir, upload_file_path):
     indexer = DirectoryIndexer(upload_file_path)
-    valid_file_types=['php', 'py', 'scala', 'html', 'java', 'xml', 'yml', 'ju', 'ini', 'c']
+    valid_file_types=['php', 'py', 'scala', 'html', 'java', 'xml', 'yml', 'ju', 'ini', 'c', 'sh']
     items_added = 0
 
     for root, directories, filenames in os.walk(search_dir):
