@@ -3,6 +3,7 @@ import sys
 from os.path import basename
 import time
 import shutil
+import datetime
 
 class DirectoryIndexer(object):
     file_name = ""
@@ -46,9 +47,8 @@ def index(search_dir, upload_file_path):
                 indexer.add_item(os.path.join(root,filename))
                 items_added += 1
 
-    print("items added: " + str(items_added))
     indexer.flush()
-    return None
+    return items_added
 
 def get_directory_list():
     if len(sys.argv) not in [3]:
@@ -62,8 +62,8 @@ def get_directory_list():
         if os.path.isdir(directory) == False:
             print("Invalid directory: " + directory)
             sys.exit()
-        else:
-            print("Valid dir: " + directory)
+        #else:
+        #    print("Valid dir: " + directory)
 
     if os.path.exists(out_file):
         if os.path.isdir(out_file):
@@ -73,10 +73,17 @@ def get_directory_list():
     return (dirs, out_file)
 
 if __name__ == '__main__':
+    start_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    print("Job started at: " + start_at)
+
     (dirs, out_file) = get_directory_list()
     temp_file = out_file + str(int(time.time()))
 
     for directory in dirs:
-        index(directory, temp_file)
+        files_indexed = index(directory, temp_file)
+        print("Directory: " + directory + " (" + str(files_indexed) + ")")
 
     shutil.move(temp_file, out_file)
+
+    end_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    print("Job finished at: " + end_at)
