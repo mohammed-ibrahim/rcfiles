@@ -33,9 +33,9 @@ class DirectoryIndexer(object):
             self.flush()
 
 
-def index(search_dir, upload_file_path):
+def index(search_dir, valid_file_types, upload_file_path):
     indexer = DirectoryIndexer(upload_file_path)
-    valid_file_types=['php', 'py', 'scala', 'html', 'java', 'xml', 'yml', 'ju', 'ini', 'c', 'sh']
+    #valid_file_types=['php', 'py', 'scala', 'html', 'java', 'xml', 'yml', 'ju', 'ini', 'c', 'sh', 'twig']
     items_added = 0
 
     for root, directories, filenames in os.walk(search_dir):
@@ -51,12 +51,13 @@ def index(search_dir, upload_file_path):
     return items_added
 
 def get_directory_list():
-    if len(sys.argv) not in [3]:
-        print('Usage: <program> <input_directories> <directory>')
+    if len(sys.argv) not in [4]:
+        print('Usage: <program> <colon_seperated_input_directories> <colon_seperated_file_types> <index_file_name>')
         sys.exit()
 
     dirs = sys.argv[1].split(":")
-    out_file = sys.argv[2] 
+    file_types = sys.argv[2].split(":")
+    out_file = sys.argv[3] 
 
     for directory in dirs:
         if os.path.isdir(directory) == False:
@@ -70,17 +71,17 @@ def get_directory_list():
             print("Invalid index file: " + out_file)
             sys.exit()
 
-    return (dirs, out_file)
+    return (dirs, file_types, out_file)
 
 if __name__ == '__main__':
     start_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     print("Job started at: " + start_at)
 
-    (dirs, out_file) = get_directory_list()
+    (dirs, file_types, out_file) = get_directory_list()
     temp_file = out_file + str(int(time.time()))
 
     for directory in dirs:
-        files_indexed = index(directory, temp_file)
+        files_indexed = index(directory, file_types, temp_file)
         print("Directory: " + directory + " (" + str(files_indexed) + ")")
 
     shutil.move(temp_file, out_file)

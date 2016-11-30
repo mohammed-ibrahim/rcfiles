@@ -38,7 +38,10 @@ inoremap <F7> :set number!<Return>
 noremap <Tab> i<Space><Space><Space><Space><Esc>l
 noremap <F3> <C-w><C-w>
 inoremap <F3> <Esc><C-w><C-w>i
+inoremap <C-e> <Esc>$i
 noremap ! *
+noremap @ gf
+cnoremap @ <Return>gf
 noremap <F10> `a
 noremap <F9> ma
 noremap <F5> :e ~/index<Return>/
@@ -51,7 +54,7 @@ noremap Y Vy
 noremap <C-n> :tabnew<Return>
 noremap <C-o> :tabnew<Return>:e .<Return>
 vnoremap // y/<C-R>"<Return>
-noremap <F11> :tabnew<Return>:CtrlP<Return> 
+noremap <F11> :tabnew<Return>:e ~/index<Return>/
 noremap <F12> `
 noremap \ :e ~/index<Return>/
 noremap c C<Esc>
@@ -59,5 +62,5 @@ noremap c C<Esc>
 set runtimepath^=~/.vim/bundle/ctrlp.vim
 let g:ctrlp_regexp = 1
 let g:ctrlp_by_filename = 1
-"set incsearch
-"set ignorecase
+set incsearch
+set ignorecase
