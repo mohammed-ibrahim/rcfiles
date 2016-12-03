@@ -1,6 +1,7 @@
 import base64
 import getpass
 import sys
+import os
 
 def encode(password, input_to_encode):
     encoded_object = []
@@ -19,19 +20,35 @@ def decode(password, encoded_object):
         dec.append(dec_c)
     return "".join(dec)
 
-x = raw_input('(e)ncode or (d)ecode? : ')
-if not x in ['e', 'd']:
-    print "Invalid input."
-    sys.exit(0)
+def start(match_key):
+    if len(sys.argv) != 3:
+        print 'Usage: cry [-e|-d] <input>'
+        sys.exit(0)
 
-input_content = raw_input('Enter Input: ')
-pw = getpass.getpass()
+    x = sys.argv[1]
+    if not x in ['-e', '-d']:
+        print "Invalid command line option, use either -e or -d"
+        sys.exit(0)
 
-if pw == '' or pw == None:
-    print "Invalid password."
-    sys.exit(0)
+    input_content = sys.argv[2]
+    pw = getpass.getpass()
 
-if x == 'e':
-    print(encode(pw, input_content))
-else:
-    print(decode(pw, input_content))
+    if pw == '' or pw == None:
+        print "Invalid password."
+        sys.exit(0)
+
+    if pw != match_key:
+        print "Password doesn't match."
+        sys.exit(0)
+
+    if x == '-e':
+        print(encode(pw, input_content))
+    else:
+        print(decode(pw, input_content))
+
+if __name__ == '__main__':
+    encr_key = os.environ.get('ENCY_RTPS')
+    if encr_key is None:
+        print 'ENCY_RTPS env variable is not available.'
+        sys.exit(0)
+    start(base64.urlsafe_b64decode(encr_key))
