@@ -13,7 +13,7 @@ alias p='pushd'
 alias o='popd'
 alias s="python $RC_DIR_SETUP_LOC/file_search.py"
 alias ms='mysql -root fabric --execute '
-alias cry="python $RC_DIR_SETUP_LOC/crypt.py"
+alias cry="python $RC_DIR_SETUP_LOC/cst_encoder.py"
 
 PS1='\W\$ '
 

@@ -61,7 +61,7 @@ class CstEncoder:
 String ops class
 """
 class StringOps:
-    vector = 'abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?.'
+    vector = 'abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?._'
 
     def get_vector(self):
         return self.vector
