@@ -59,19 +59,19 @@ def get_directory_list():
     file_types = sys.argv[2].split(":")
     out_file = sys.argv[3] 
 
+    valid_dirs = list()
     for directory in dirs:
-        if os.path.isdir(directory) == False:
+        if os.path.isdir(directory) == True:
+            valid_dirs.append(directory)
+        else:
             print("Invalid directory: " + directory)
-            sys.exit()
-        #else:
-        #    print("Valid dir: " + directory)
 
     if os.path.exists(out_file):
         if os.path.isdir(out_file):
             print("Invalid index file: " + out_file)
             sys.exit()
 
-    return (dirs, file_types, out_file)
+    return (valid_dirs, file_types, out_file)
 
 if __name__ == '__main__':
     start_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
