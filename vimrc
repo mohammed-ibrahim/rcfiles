@@ -10,8 +10,8 @@ set autoread
 set nocompatible
 set complete-=i
 "syntax enable
-"filetype plugin on
-"set path+=**
+filetype plugin on
+set path+=**
 "filetype plugin indent on
 
 au BufRead,BufNewFile *.scala         setfiletype scala
@@ -62,6 +62,7 @@ inoremap <F2> <Esc>:wq<Return>
 inoremap <F3> <Esc><C-w><C-w>i
 inoremap <F5> :e ~/index<Return>/
 inoremap <F7> :set number!<Return>
+inoremap <F8> <C-x><C-n>
 inoremap <C-e> <Esc>$i
 
 xnoremap p pgvy
