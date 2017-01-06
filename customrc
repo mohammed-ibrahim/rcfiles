@@ -1,4 +1,5 @@
 export RC_DIR_SETUP_LOC=''
+export ENCY_RTPS=''
 #Custom aliases
 alias ll='ls -alF'
 alias la='ls -A'
@@ -14,6 +15,10 @@ alias o='popd'
 alias s="python $RC_DIR_SETUP_LOC/file_search.py"
 alias ms='mysql -root fabric --execute '
 alias cry="python $RC_DIR_SETUP_LOC/cst_encoder.py"
+alias g='git'
+alias gb='git branch | grep "*"'
+alias index=''
+
 
 PS1='\W\$ '
 

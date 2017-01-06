@@ -8,10 +8,10 @@ set wildmenu
 set wildignore=*.pyc,*.pyo,*.class
 set autoread
 set nocompatible
-set complete-=i
+"set complete-=i
 "syntax enable
-filetype plugin on
-set path+=**
+"filetype plugin on
+"set path+=**
 "filetype plugin indent on
 
 au BufRead,BufNewFile *.scala         setfiletype scala
@@ -24,10 +24,7 @@ noremap ' o<Esc>
 noremap = $
 noremap { <C-b>
 noremap } <C-f>
-noremap [ gT
-noremap ] gt
 noremap a A
-noremap l G
 noremap j 15k
 noremap k 15j
 noremap K i<Return><Esc>
@@ -36,16 +33,12 @@ noremap q viw
 noremap <F1> :w<Return>
 noremap <F2> :wq<Return>
 noremap <F3> <C-w><C-w>
-noremap <F4> /\C<Left><Left>
-noremap <F5> :e ~/index<Return>/
+noremap <F4> /\<\>C<Left><Left><Left><Left>
 noremap <F6> gf
 noremap <F7> :set number!<Return>
 noremap <F9> ma
-noremap <F10> `a
 noremap <F11> :tabnew<Return>:e ~/index<Return>/
-noremap <F12> `
 
-noremap ` :q<Return>
 noremap <Tab> i<Space><Space><Space><Space><Esc>l
 noremap ! *
 noremap @ gf
@@ -62,7 +55,6 @@ inoremap <F2> <Esc>:wq<Return>
 inoremap <F3> <Esc><C-w><C-w>i
 inoremap <F5> :e ~/index<Return>/
 inoremap <F7> :set number!<Return>
-inoremap <F8> <C-x><C-n>
 inoremap <C-e> <Esc>$i
 
 xnoremap p pgvy

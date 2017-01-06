@@ -1,4 +1,5 @@
 import sys
+import os
 import base64
 import random
 import getpass
@@ -67,7 +68,13 @@ class StringOps:
         return self.vector
     
     def get_password(self):
-        return getpass.getpass()
+        encr_key = os.environ.get('ENCY_RTPS')
+        if encr_key is None:
+            print 'ENCY_RTPS env variable is not available.'
+            sys.exit(0)
+
+        return base64.urlsafe_b64decode(encr_key)
+        #return getpass.getpass()
     
     def get_prod_vector_and_password(self):
         vector = self.get_vector()
@@ -107,12 +114,12 @@ def test():
     print "Passed"
 
 if __name__ == '__main__':
+
     if len(sys.argv) != 3:
         print 'program [-e|-d] <input>'
         sys.exit(0)
 
     option = sys.argv[1]
-
     if not option in ['-e', '-d', '-t']:
         print 'Invalid option.'
         print 'program [-e|-d] <input>'
