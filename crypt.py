@@ -41,10 +41,19 @@ def start(match_key):
         print "Password doesn't match."
         sys.exit(0)
 
+    max_padding = 64
     if x == '-e':
-        print(encode(pw, input_content))
+        e1 = encode(pw, input_content)
+        if len(e1) > max_padding:
+            print 'Input password too long'
+            sys.exit(0)
+
+        e2 = encode(pw, e1.rjust(max_padding, ' '))
+        print e2
     else:
-        print(decode(pw, input_content))
+        d1 = decode(pw, input_content)
+        d2 = decode(pw, d1.strip())
+        print d2
 
 if __name__ == '__main__':
     encr_key = os.environ.get('ENCY_RTPS')

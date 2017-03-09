@@ -18,6 +18,11 @@ au BufRead,BufNewFile *.scala         setfiletype scala
 au BufRead,BufNewFile *.scala         set shiftwidth=2
 au FileType scala setl sw=2 sts=2 et
 
+
+au BufRead,BufNewFile *.yml         setfiletype yml
+au BufRead,BufNewFile *.yml         set shiftwidth=2
+au FileType yml setl sw=2 sts=2 et
+
 noremap - dd
 noremap ; O<Esc>
 noremap ' o<Esc>
@@ -38,6 +43,10 @@ noremap <F6> gf
 noremap <F7> :set number!<Return>
 noremap <F9> ma
 noremap <F11> :tabnew<Return>:e ~/index<Return>/
+noremap ] gt
+noremap [ gT
+noremap <C-y> gT
+noremap <C-u> gt
 
 noremap <Tab> i<Space><Space><Space><Space><Esc>l
 noremap ! *
@@ -55,6 +64,8 @@ inoremap <F2> <Esc>:wq<Return>
 inoremap <F3> <Esc><C-w><C-w>i
 inoremap <F5> :e ~/index<Return>/
 inoremap <F7> :set number!<Return>
+inoremap <F9> <C-x><C-n>
+inoremap <F10> <C-y>
 inoremap <C-e> <Esc>$i
 
 xnoremap p pgvy
