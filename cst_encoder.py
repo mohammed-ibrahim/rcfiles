@@ -73,7 +73,8 @@ class StringOps:
             print 'ENCY_RTPS env variable is not available.'
             sys.exit(0)
 
-        return base64.urlsafe_b64decode(encr_key)
+        unsafe_cased_key = base64.urlsafe_b64decode(encr_key)
+        return unsafe_cased_key.lower()
         #return getpass.getpass()
     
     def get_prod_vector_and_password(self):
