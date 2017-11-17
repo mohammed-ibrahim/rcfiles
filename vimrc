@@ -8,6 +8,7 @@ set wildmenu
 set wildignore=*.pyc,*.pyo,*.class
 set autoread
 set nocompatible
+set nowrap
 "set complete-=i
 "syntax enable
 "filetype plugin on
@@ -41,6 +42,7 @@ noremap <F3> <C-w><C-w>
 noremap <F4> /\<\>C<Left><Left><Left><Left>
 noremap <F6> gf
 noremap <F7> :set number!<Return>
+noremap <F8> :set wrap!<Return>
 noremap <F9> ma
 noremap <F11> :tabnew<Return>:e ~/index<Return>/
 noremap ] gt
