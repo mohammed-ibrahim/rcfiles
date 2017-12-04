@@ -1,0 +1,268 @@
+<html>
+    <body>
+
+        <!-- Section: Input -->
+        <p>
+            <textarea id="primary_input_text" name="Text" rows="6" cols="36">input_key - input_value</textarea>
+        </p>
+
+        <!-- Section: Walkthrough -->
+        <div hidden id="walkthrough_div">
+            <h1 id="walkthrough_key">Key</h1>
+            <h1 id="walkthrough_value">Value</h1>
+        </div>
+
+        <!-- Section: MCQ -->
+        <div hidden id="mcq_div">
+
+            <p id="mcq_question">This is default question.</p>
+            <ul class="answers">
+                <input type="radio" name="mcq_radio_button" value="a" id="mcq_a"><label id="label_for_mcq_a">Answer 1</label><br/>
+                <input type="radio" name="mcq_radio_button" value="b" id="mcq_b"><label id="label_for_mcq_b">Answer 2</label><br/>
+                <input type="radio" name="mcq_radio_button" value="c" id="mcq_c"><label id="label_for_mcq_c">Answer 3</label><br/>
+                <input type="radio" name="mcq_radio_button" value="d" id="mcq_d"><label id="label_for_mcq_d">Answer 4</label><br/>
+            </ul>
+        </div>
+
+        <!-- Section: MAT -->
+        <div hidden id="mat_div">
+
+        </div>
+
+        <input type="button" name="Button" value="Submit" onclick="onButtonClick()" />
+        <script>
+            var dictItems = new Array();
+            var index = 0;
+            var pageState = "not_started";
+            var numWalkthrough = 3;
+            var numMcq = 3;
+            var numMat = 3;
+
+            <!-- Router -->
+
+            function onButtonClick() {
+                if (pageState == "not_started") {
+                    load();
+                    //nextWalkthrough();
+                    nextMcq();
+
+                    return;
+                }
+
+                if (pageState == "walkthrough") {
+                    nextWalkthrough();
+                    if (index > numWalkthrough) {
+                        index = 0;
+                        pageState = "mcq";
+                    }
+
+                    return;
+                }
+
+                if (pageState == "mcq") {
+                    nextMcq();
+                    /*
+                    if (index > numMcq) {
+                        index = 0;
+                        pageState = "mat";
+                    }
+                    */
+
+                    return;
+                }
+
+                if (pageState == "mat") {
+                    nextMat();
+                    if (index > numMat) {
+                        index = 0;
+                        pageState = "mcq";
+                    }
+
+                    return;
+                }
+            }
+
+            <!-- Services -->
+
+            function nextMat() {
+
+                var walkthroughDiv = document.getElementById("walkthrough_div");
+                var mcqDiv = document.getElementById("mcq_div");
+                var walkthroughDiv = document.getElementById("mat_div");
+
+                walkthroughDiv.style.display = "none";
+                mcqDiv.style.display = "none";
+                mat.style.display = "block";
+
+            }
+
+            function nextMcq() {
+
+                var walkthroughDiv = document.getElementById("walkthrough_div");
+                var mcqDiv = document.getElementById("mcq_div");
+                var matDiv = document.getElementById("mat_div");
+
+                walkthroughDiv.style.display = "none";
+                mcqDiv.style.display = "block";
+                matDiv.style.display = "none";
+
+                var r1 = getRandomInt(0, dictItems.length - 1);
+                var r2 = getRandomInt(0, dictItems.length - 1);
+                var r3 = getRandomInt(0, dictItems.length - 1);
+                var r4 = getRandomInt(0, dictItems.length - 1);
+
+                var mcqKey = dictItems[r1]["key"];
+                var mcqValue = dictItems[r1]["value"];
+                document.getElementById("mcq_question").innerHTML = mcqKey;
+
+                var originalState = [r1, r2, r3, r4];
+                var shuffeledArray = shuffle(originalState);
+                document.getElementById("label_for_mcq_a").innerHTML = dictItems[shuffeledArray[0]]["value"];
+                document.getElementById("label_for_mcq_b").innerHTML = dictItems[shuffeledArray[1]]["value"];
+                document.getElementById("label_for_mcq_c").innerHTML = dictItems[shuffeledArray[2]]["value"];
+                document.getElementById("label_for_mcq_d").innerHTML = dictItems[shuffeledArray[3]]["value"];
+            }
+
+            function nextWalkthrough() {
+
+                var walkthroughDiv = document.getElementById("walkthrough_div");
+                var mcqDiv = document.getElementById("mcq_div");
+                var matDiv = document.getElementById("mat_div");
+
+                walkthroughDiv.style.display = "block";
+                mcqDiv.style.display = "none";
+                matDiv.style.display = "none";
+
+                if (index >= dictItems.length) {
+                    alert("Dictionary items are done!");
+                    return;
+                }
+
+                var obj = dictItems[index];
+                console.log("index is: " + index);
+                console.log("loaded object is: " + obj);
+                var key = obj["key"];
+                var value = obj["value"];
+
+                document.getElementById("walkthrough_key").innerHTML = key;
+                document.getElementById("walkthrough_value").innerHTML = value;
+                index = index + 1;
+            }
+
+            function load() {
+                var textBox = document.getElementById("primary_input_text");
+
+                if (!textBox.value) {
+                    alert("Empty input");
+                    return;
+                }
+
+                var data = textBox.value
+                var sdata = data.split("\n");
+
+                for (line in sdata) {
+                    linedata = sdata[line];
+                    console.log("line: " + linedata);
+                    var content = linedata.split(" - ");
+                    if (content.length == 2) {
+
+                        console.log("content: " + content[0]);
+                        console.log("value: " +  content[1]);
+                        dictItems.push({key: content[0], value: content[1], state: "v"});
+                    } else {
+                        console.error("Entry format error: " + linedata);
+                    }
+                }
+
+                console.log("Size of dictionary: " + dictItems.length);
+
+                /*
+                for (di in dictItems) {
+                    var didata = dictItems[di];
+                    console.log(didata["key"]  + " ---------- " + didata["value"]  + " ---------- " + didata["state"]);
+                }
+                */
+
+                //Hide the textbox
+                if (textBox.style.display === "none") {
+                    //textBox.style.display = "block";
+                } else {
+                    textBox.style.display = "none";
+                }
+
+                pageState = "walkthrough";
+            }
+
+            <!-- Helper Methods -->
+            function getRandomInt(min, max) {
+                min = Math.ceil(min);
+                max = Math.floor(max);
+                return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+            }
+
+            function randomArray(length, max) {
+                return Array.apply(null, Array(length)).map(function() {
+                    return Math.round(Math.random() * max);
+                });
+            }
+
+            function shuffle(array) {
+                var currentIndex = array.length, temporaryValue, randomIndex;
+
+                // While there remain elements to shuffle...
+                while (0 !== currentIndex) {
+
+                    // Pick a remaining element...
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex -= 1;
+
+                    // And swap it with the current element.
+                    temporaryValue = array[currentIndex];
+                    array[currentIndex] = array[randomIndex];
+                    array[randomIndex] = temporaryValue;
+                }
+
+                return array;
+            }
+
+window.onload = function() {
+var textBox = document.getElementById("primary_input_text");
+textBox.value = `one - one with one
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+two - two with two
+three - three with three
+four - four with four`;
+};
+
+        </script>
+    </body>
+<html>
