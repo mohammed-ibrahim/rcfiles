@@ -38,17 +38,114 @@
 
         <!-- Section: MAT -->
         <div hidden id="mat_div" class="centerdiv">
-            <p>Match the following</p>
-            <table style="width:100%">
+            <font size="+7"><p>Match the following</p></font>
+            <table style="width:100%" class="bigfont">
+                <tr>
+                    <th>A</th>
+                    <th>B</th>
+                </tr>
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <label id="mat_lhs_label_a" value="default_value_lhs">Label_lHS</label>
+                        <select id="mat_lhs_select_a">
+                            <option value="selected_item_a">A</option>
+                            <option value="selected_item_b">B</option>
+                            <option value="selected_item_c">C</option>
+                            <option value="selected_item_d">D</option>
+                            <option value="selected_item_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <label id="mat_rhs_label_a" value="default_value_rhs">Label_RHS</label>
+                        <label>(A)</label>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <label id="mat_lhs_label_b" value="default_value_lhs">Label_lHS</label>
+                        <select id="mat_lhs_select_b">
+                            <option value="selected_item_a">A</option>
+                            <option value="selected_item_b">B</option>
+                            <option value="selected_item_c">C</option>
+                            <option value="selected_item_d">D</option>
+                            <option value="selected_item_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <label id="mat_rhs_label_b" value="default_value_rhs">Label_RHS</label>
+                        <label>(B)</label>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <label id="mat_lhs_label_c" value="default_value_lhs">Label_lHS</label>
+                        <select id="mat_lhs_select_c">
+                            <option value="selected_item_a">A</option>
+                            <option value="selected_item_b">B</option>
+                            <option value="selected_item_c">C</option>
+                            <option value="selected_item_d">D</option>
+                            <option value="selected_item_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <label id="mat_rhs_label_c" value="default_value_rhs">Label_RHS</label>
+                        <label>(C)</label>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <label id="mat_lhs_label_d" value="default_value_lhs">Label_lHS</label>
+                        <select id="mat_lhs_select_d">
+                            <option value="selected_item_a">A</option>
+                            <option value="selected_item_b">B</option>
+                            <option value="selected_item_c">C</option>
+                            <option value="selected_item_d">D</option>
+                            <option value="selected_item_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <label id="mat_rhs_label_d" value="default_value_rhs">Label_RHS</label>
+                        <label>(D)</label>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <label id="mat_lhs_label_e" value="default_value_lhs">Label_lHS</label>
+                        <select id="mat_lhs_select_e">
+                            <option value="selected_item_a">A</option>
+                            <option value="selected_item_b">B</option>
+                            <option value="selected_item_c">C</option>
+                            <option value="selected_item_d">D</option>
+                            <option value="selected_item_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <label id="mat_rhs_label_e" value="default_value_rhs">Label_RHS</label>
+                        <label>(E)</label>
+                    </td>
+                </tr>
 
             </table>
+            <br/>
+            <br/>
             <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
         </div>
+
+        <label id="status_bar"></label>
 
         <script>
             var globalPrimaryDictionary = new Array();
             //var dictMap = {};
-            var index = 0;
+            var globalCounterIndex = 0;
             var pageState = "not_started";
             var numWalkthrough = 3;
             var numMcq = 3;
@@ -64,41 +161,41 @@
 
                         return;
                     }
-                    //response = nextWalkthrough();
-                    //pageState = "walkthrough";
+                    response = nextWalkthrough();
+                    pageState = "walkthrough";
+                    if (response) {
+                        globalCounterIndex = -1;
+                    }
 
                     //TODO: del below two lines
-                    pageState = "mcq";
-                    response = nextMcq();
+                    //pageState = "mat";
+                    //response = nextMat();
 
                 } else if (pageState == "walkthrough") {
                     response = nextWalkthrough();
-                    if (index > numWalkthrough) {
-                        index = 0;
+                    if ((response) && (globalCounterIndex > numWalkthrough)) {
+                        globalCounterIndex = -1;
                         pageState = "mcq";
                     }
 
                 } else if (pageState == "mcq") {
                     response = nextMcq();
-                    //TODO: uncomment below
-                    /*
-                    if (index > numMcq) {
-                        index = 0;
+                    if ((response) && (globalCounterIndex > numMcq)) {
+                        globalCounterIndex = -1;
                         pageState = "mat";
                     }
-                    */
 
                 } else if (pageState == "mat") {
                     response = nextMat();
-                    if (index > numMat) {
-                        index = 0;
+                    if ((response) && (globalCounterIndex > numMat)) {
+                        globalCounterIndex = -1;
                         pageState = "mcq";
                     }
 
                 }
 
                 if (response) {
-                    index = index + 1;
+                    globalCounterIndex = globalCounterIndex + 1;
                 }
             }
 
@@ -126,9 +223,9 @@
                 mcqDiv.style.display = "block";
                 matDiv.style.display = "none";
 
-                //index will be zero for the first time.
+                //globalCounterIndex will be zero for the first time.
                 //So need not evaluate on first time.
-                if (index > 0) {
+                if (globalCounterIndex > 0) {
                     var checkedValueQid;
 
                     if (document.getElementById("mcq_a").checked) {
@@ -168,10 +265,10 @@
                 document.getElementById("mcq_c").checked = false;
                 document.getElementById("mcq_d").checked = false;
 
-                var r1 = getRandomInt(0, globalPrimaryDictionary.length - 1);
-                var r2 = getRandomInt(0, globalPrimaryDictionary.length - 1);
-                var r3 = getRandomInt(0, globalPrimaryDictionary.length - 1);
-                var r4 = getRandomInt(0, globalPrimaryDictionary.length - 1);
+                var r1 = getRandomInt(0, globalPrimaryDictionary.length);
+                var r2 = getRandomInt(0, globalPrimaryDictionary.length);
+                var r3 = getRandomInt(0, globalPrimaryDictionary.length);
+                var r4 = getRandomInt(0, globalPrimaryDictionary.length);
 
                 var mcqKey = globalPrimaryDictionary[r1]["key"];
                 var mcqValue = globalPrimaryDictionary[r1]["value"];
@@ -203,13 +300,13 @@
                 mcqDiv.style.display = "none";
                 matDiv.style.display = "none";
 
-                if (index >= globalPrimaryDictionary.length) {
+                if (globalCounterIndex >= globalPrimaryDictionary.length) {
                     alert("Dictionary items are done!");
                     return false;
                 }
 
-                var obj = globalPrimaryDictionary[index];
-                console.log("index is: " + index);
+                var obj = globalPrimaryDictionary[globalCounterIndex];
+                console.log("globalCounterIndex is: " + globalCounterIndex);
                 console.log("loaded object is: " + obj);
                 var key = obj["key"];
                 var value = obj["value"];
@@ -343,40 +440,16 @@
 
 window.onload = function() {
 var textBox = document.getElementById("primary_input_text");
-textBox.value = `one - one with one
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-two - two with two
-three - three with three
-four - four with four`;
+textBox.value = `one - 1one
+two - 2two
+three - 3three
+four - 4four
+five - 5five
+six - 6six
+seven - 7seven
+eight - 8eight
+nine - 9nine
+zero - 0zero`
 };
 
         </script>
@@ -392,14 +465,27 @@ four - four with four`;
                 font-size: 16px;
             }
             .centerdiv {
-                position: absolute;
+                margin: auto;
+                width: 50%;
+                border: 3px solid green;
+                padding: 10px;
+                text-align: center;
+            }
+            .centerdis {
+                position: relative;
                 width: 300px;
+                width: 50%;
                 height: 200px;
-                z-index: 15;
+                height: 80%;
+                z-index: 30;
                 top: 20%;
                 left: 50%;
                 margin: -100px 0 0 -150px;
                 text-align: center;
+            }
+
+            .bigfont {
+                font-size: 25px;
             }
         </style>
     </body>
