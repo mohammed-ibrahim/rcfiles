@@ -2,36 +2,52 @@
     <body>
 
         <!-- Section: Input -->
-        <p>
-            <textarea id="primary_input_text" name="Text" rows="6" cols="36">input_key - input_value</textarea>
-        </p>
+        <div id="input_div" class="centerdiv">
+            <p>
+                <textarea id="primary_input_text" name="Text" rows="6" cols="36">input_key - input_value</textarea>
+                <br/>
+                <br/>
+                <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
+            </p>
+        </div>
 
         <!-- Section: Walkthrough -->
-        <div hidden id="walkthrough_div">
+        <div hidden id="walkthrough_div" class="centerdiv">
             <h1 id="walkthrough_key">Key</h1>
             <h1 id="walkthrough_value">Value</h1>
+            <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
         </div>
 
         <!-- Section: MCQ -->
-        <div hidden id="mcq_div">
+        <div hidden id="mcq_div" class="centerdiv">
 
-            <p id="mcq_question">This is default question.</p>
+            <font size="+20">
+                <p id="mcq_question">This is default question.</p>
+            </font>
+            <input id="qid_holder" type="hidden" value="dontknow">
+            <font size="+2">
             <ul class="answers">
-                <input type="radio" name="mcq_radio_button" value="a" id="mcq_a"><label id="label_for_mcq_a">Answer 1</label><br/>
-                <input type="radio" name="mcq_radio_button" value="b" id="mcq_b"><label id="label_for_mcq_b">Answer 2</label><br/>
-                <input type="radio" name="mcq_radio_button" value="c" id="mcq_c"><label id="label_for_mcq_c">Answer 3</label><br/>
-                <input type="radio" name="mcq_radio_button" value="d" id="mcq_d"><label id="label_for_mcq_d">Answer 4</label><br/>
+                <input type="radio" name="mcq_radio_button" value="a" id="mcq_a"><label onclick="selA()" id="label_for_mcq_a">Answer 1</label><br/>
+                <input type="radio" name="mcq_radio_button" value="b" id="mcq_b"><label onclick="selB()" id="label_for_mcq_b">Answer 2</label><br/>
+                <input type="radio" name="mcq_radio_button" value="c" id="mcq_c"><label onclick="selC()" id="label_for_mcq_c">Answer 3</label><br/>
+                <input type="radio" name="mcq_radio_button" value="d" id="mcq_d"><label onclick="selD()" id="label_for_mcq_d">Answer 4</label><br/>
             </ul>
+            </font>
+            <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
         </div>
 
         <!-- Section: MAT -->
-        <div hidden id="mat_div">
+        <div hidden id="mat_div" class="centerdiv">
+            <p>Match the following</p>
+            <table style="width:100%">
 
+            </table>
+            <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
         </div>
 
-        <input type="button" name="Button" value="Submit" onclick="onButtonClick()" />
         <script>
-            var dictItems = new Array();
+            var globalPrimaryDictionary = new Array();
+            //var dictMap = {};
             var index = 0;
             var pageState = "not_started";
             var numWalkthrough = 3;
@@ -41,26 +57,30 @@
             <!-- Router -->
 
             function onButtonClick() {
+                var response;
+
                 if (pageState == "not_started") {
-                    load();
-                    //nextWalkthrough();
-                    nextMcq();
+                    if (!load()) {
 
-                    return;
-                }
+                        return;
+                    }
+                    //response = nextWalkthrough();
+                    //pageState = "walkthrough";
 
-                if (pageState == "walkthrough") {
-                    nextWalkthrough();
+                    //TODO: del below two lines
+                    pageState = "mcq";
+                    response = nextMcq();
+
+                } else if (pageState == "walkthrough") {
+                    response = nextWalkthrough();
                     if (index > numWalkthrough) {
                         index = 0;
                         pageState = "mcq";
                     }
 
-                    return;
-                }
-
-                if (pageState == "mcq") {
-                    nextMcq();
+                } else if (pageState == "mcq") {
+                    response = nextMcq();
+                    //TODO: uncomment below
                     /*
                     if (index > numMcq) {
                         index = 0;
@@ -68,17 +88,17 @@
                     }
                     */
 
-                    return;
-                }
-
-                if (pageState == "mat") {
-                    nextMat();
+                } else if (pageState == "mat") {
+                    response = nextMat();
                     if (index > numMat) {
                         index = 0;
                         pageState = "mcq";
                     }
 
-                    return;
+                }
+
+                if (response) {
+                    index = index + 1;
                 }
             }
 
@@ -88,11 +108,11 @@
 
                 var walkthroughDiv = document.getElementById("walkthrough_div");
                 var mcqDiv = document.getElementById("mcq_div");
-                var walkthroughDiv = document.getElementById("mat_div");
+                var matDiv = document.getElementById("mat_div");
 
                 walkthroughDiv.style.display = "none";
                 mcqDiv.style.display = "none";
-                mat.style.display = "block";
+                matDiv.style.display = "block";
 
             }
 
@@ -106,21 +126,71 @@
                 mcqDiv.style.display = "block";
                 matDiv.style.display = "none";
 
-                var r1 = getRandomInt(0, dictItems.length - 1);
-                var r2 = getRandomInt(0, dictItems.length - 1);
-                var r3 = getRandomInt(0, dictItems.length - 1);
-                var r4 = getRandomInt(0, dictItems.length - 1);
+                //index will be zero for the first time.
+                //So need not evaluate on first time.
+                if (index > 0) {
+                    var checkedValueQid;
 
-                var mcqKey = dictItems[r1]["key"];
-                var mcqValue = dictItems[r1]["value"];
+                    if (document.getElementById("mcq_a").checked) {
+
+                        checkedValueQid = document.getElementById("mcq_a").value;
+                    } else if (document.getElementById("mcq_b").checked) {
+
+                        checkedValueQid = document.getElementById("mcq_b").value;
+                    } else if (document.getElementById("mcq_c").checked) {
+
+                        checkedValueQid = document.getElementById("mcq_c").value;
+                    } else if (document.getElementById("mcq_d").checked) {
+
+                        checkedValueQid = document.getElementById("mcq_d").value;
+                    }
+
+                    if (checkedValueQid) {
+                        var hiddenQid = document.getElementById("qid_holder").value
+                        if (hiddenQid !== checkedValueQid) {
+                            alert("wrong answer");
+                            return false;
+                        }
+                    } else {
+                        alert("Please select one answer");
+                        return false;
+                    }
+
+                    //At this stage the answer is correct!
+                    //So delete the question.
+                    var itemsToDelete = [hiddenQid];
+                    console.log("Requesting to delete: " + itemsToDelete);
+                    deleteItems(itemsToDelete);
+                }
+
+                document.getElementById("mcq_a").checked = false;
+                document.getElementById("mcq_b").checked = false;
+                document.getElementById("mcq_c").checked = false;
+                document.getElementById("mcq_d").checked = false;
+
+                var r1 = getRandomInt(0, globalPrimaryDictionary.length - 1);
+                var r2 = getRandomInt(0, globalPrimaryDictionary.length - 1);
+                var r3 = getRandomInt(0, globalPrimaryDictionary.length - 1);
+                var r4 = getRandomInt(0, globalPrimaryDictionary.length - 1);
+
+                var mcqKey = globalPrimaryDictionary[r1]["key"];
+                var mcqValue = globalPrimaryDictionary[r1]["value"];
+                document.getElementById("qid_holder").value = globalPrimaryDictionary[r1]["qid"];
                 document.getElementById("mcq_question").innerHTML = mcqKey;
 
                 var originalState = [r1, r2, r3, r4];
                 var shuffeledArray = shuffle(originalState);
-                document.getElementById("label_for_mcq_a").innerHTML = dictItems[shuffeledArray[0]]["value"];
-                document.getElementById("label_for_mcq_b").innerHTML = dictItems[shuffeledArray[1]]["value"];
-                document.getElementById("label_for_mcq_c").innerHTML = dictItems[shuffeledArray[2]]["value"];
-                document.getElementById("label_for_mcq_d").innerHTML = dictItems[shuffeledArray[3]]["value"];
+                document.getElementById("label_for_mcq_a").innerHTML = globalPrimaryDictionary[shuffeledArray[0]]["value"];
+                document.getElementById("label_for_mcq_b").innerHTML = globalPrimaryDictionary[shuffeledArray[1]]["value"];
+                document.getElementById("label_for_mcq_c").innerHTML = globalPrimaryDictionary[shuffeledArray[2]]["value"];
+                document.getElementById("label_for_mcq_d").innerHTML = globalPrimaryDictionary[shuffeledArray[3]]["value"];
+
+                document.getElementById("mcq_a").value = globalPrimaryDictionary[shuffeledArray[0]]["qid"];
+                document.getElementById("mcq_b").value = globalPrimaryDictionary[shuffeledArray[1]]["qid"];
+                document.getElementById("mcq_c").value = globalPrimaryDictionary[shuffeledArray[2]]["qid"];
+                document.getElementById("mcq_d").value = globalPrimaryDictionary[shuffeledArray[3]]["qid"];
+
+                return true;
             }
 
             function nextWalkthrough() {
@@ -133,12 +203,12 @@
                 mcqDiv.style.display = "none";
                 matDiv.style.display = "none";
 
-                if (index >= dictItems.length) {
+                if (index >= globalPrimaryDictionary.length) {
                     alert("Dictionary items are done!");
-                    return;
+                    return false;
                 }
 
-                var obj = dictItems[index];
+                var obj = globalPrimaryDictionary[index];
                 console.log("index is: " + index);
                 console.log("loaded object is: " + obj);
                 var key = obj["key"];
@@ -146,7 +216,7 @@
 
                 document.getElementById("walkthrough_key").innerHTML = key;
                 document.getElementById("walkthrough_value").innerHTML = value;
-                index = index + 1;
+                return true;
             }
 
             function load() {
@@ -154,7 +224,7 @@
 
                 if (!textBox.value) {
                     alert("Empty input");
-                    return;
+                    return false;
                 }
 
                 var data = textBox.value
@@ -168,17 +238,20 @@
 
                         console.log("content: " + content[0]);
                         console.log("value: " +  content[1]);
-                        dictItems.push({key: content[0], value: content[1], state: "v"});
+                        var qid = guid();
+                        var dictObj = {key: content[0], value: content[1], state: "v", qid: qid};
+                        globalPrimaryDictionary.push(dictObj);
+                        //dictMap[qid] = dictObj;
                     } else {
                         console.error("Entry format error: " + linedata);
                     }
                 }
 
-                console.log("Size of dictionary: " + dictItems.length);
+                console.log("Size of dictionary: " + globalPrimaryDictionary.length);
 
                 /*
-                for (di in dictItems) {
-                    var didata = dictItems[di];
+                for (di in globalPrimaryDictionary) {
+                    var didata = globalPrimaryDictionary[di];
                     console.log(didata["key"]  + " ---------- " + didata["value"]  + " ---------- " + didata["state"]);
                 }
                 */
@@ -190,7 +263,8 @@
                     textBox.style.display = "none";
                 }
 
-                pageState = "walkthrough";
+                document.getElementById("input_div").style.display = "none";
+                return true;
             }
 
             <!-- Helper Methods -->
@@ -223,6 +297,48 @@
                 }
 
                 return array;
+            }
+
+            function guid() {
+
+                function s4() {
+                    return Math.floor((1 + Math.random()) * 0x10000)
+                        .toString(16)
+                        .substring(1);
+                }
+
+                return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                    s4() + '-' + s4() + s4() + s4();
+            }
+
+            function selA() {
+                document.getElementById("mcq_a").checked = true;
+            }
+
+            function selB() {
+                document.getElementById("mcq_b").checked = true;
+            }
+
+            function selC() {
+                document.getElementById("mcq_c").checked = true;
+            }
+
+            function selD() {
+                document.getElementById("mcq_d").checked = true;
+            }
+
+            function deleteItems(items) {
+                for (i=globalPrimaryDictionary.length - 1; i >= 0;  i--) {
+                    var obj = globalPrimaryDictionary[i];
+                    var qid = obj["qid"];
+                    if (items.includes(qid)) {
+                        var deleted = globalPrimaryDictionary.splice(i, 1);
+                        console.log("deleted");
+                        console.log(deleted);
+                    }
+                }
+
+                console.log("After deleting size of dictionary is: " + globalPrimaryDictionary.length);
             }
 
 window.onload = function() {
@@ -264,5 +380,27 @@ four - four with four`;
 };
 
         </script>
+        <style>
+            .button {
+                background-color: #4CAF50; /* Green */
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+            }
+            .centerdiv {
+                position: absolute;
+                width: 300px;
+                height: 200px;
+                z-index: 15;
+                top: 20%;
+                left: 50%;
+                margin: -100px 0 0 -150px;
+                text-align: center;
+            }
+        </style>
     </body>
 <html>
