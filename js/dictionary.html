@@ -4,7 +4,7 @@
         <!-- Section: Input -->
         <div id="input_div" class="centerdiv">
             <p>
-                <textarea id="primary_input_text" name="Text" rows="6" cols="36">input_key - input_value</textarea>
+                <textarea id="primary_input_text" name="Text" rows="15" cols="36">input_key - input_value</textarea>
                 <br/>
                 <br/>
                 <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
@@ -13,19 +13,21 @@
 
         <!-- Section: Walkthrough -->
         <div hidden id="walkthrough_div" class="centerdiv">
-            <h1 id="walkthrough_key">Key</h1>
-            <h1 id="walkthrough_value">Value</h1>
+            <p style="font-size:60" id="walkthrough_key" onclick="showMeaningBox()">Key</p>
+            <p style="font-size:60" id="walkthrough_value">Value</p>
+            <br/>
+            <input type="checkbox" id="walkthrough_show_meaning" checked="true"/><label onclick="toggleMeaningBox()">Show Meaning</label>
+            <br/>
+            <br/>
             <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
         </div>
 
         <!-- Section: MCQ -->
         <div hidden id="mcq_div" class="centerdiv">
 
-            <font size="+20">
-                <p id="mcq_question">This is default question.</p>
-            </font>
+            <p style="font-size:60" id="mcq_question">This is default question.</p>
             <input id="qid_holder" type="hidden" value="dontknow">
-            <font size="+2">
+            <font size="+3">
             <ul class="answers">
                 <input type="radio" name="mcq_radio_button" value="a" id="mcq_a"><label onclick="selA()" id="label_for_mcq_a">Answer 1</label><br/>
                 <input type="radio" name="mcq_radio_button" value="b" id="mcq_b"><label onclick="selB()" id="label_for_mcq_b">Answer 2</label><br/>
@@ -39,16 +41,20 @@
         <!-- Section: MAT -->
         <div hidden id="mat_div" class="centerdiv">
             <font size="+7"><p>Match the following</p></font>
-            <table style="width:100%" class="bigfont">
+            <table style="width:100%" class="bigfont" border="1">
                 <tr>
                     <th>A</th>
+                    <th>A &gt B</th>
                     <th>B</th>
+                    <th>Bi</th>
                 </tr>
                 <!-- ********************************** Row Start ***************************************  -->
                 <tr>
                     <td>
-                        <label id="mat_lhs_label_a" value="default_value_lhs">Label_lHS</label>
-                        <select id="mat_lhs_select_a">
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_a" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_a" style="font-size: 20px;">
                             <option value="mat_rhs_label_a">A</option>
                             <option value="mat_rhs_label_b">B</option>
                             <option value="mat_rhs_label_c">C</option>
@@ -57,34 +63,20 @@
                         </select>
                     </td>
                     <td>
-                        <label id="mat_rhs_label_a" value="default_value_rhs">Label_RHS</label>
-                        <label>(A)</label>
-                    </td>
-                </tr>
-
-                <!-- ********************************** Row Start ***************************************  -->
-                <tr>
-                    <td>
-                        <label id="mat_lhs_label_b" value="default_value_lhs">Label_lHS</label>
-                        <select id="mat_lhs_select_b">
-                            <option value="mat_rhs_label_a">A</option>
-                            <option value="mat_rhs_label_b">B</option>
-                            <option value="mat_rhs_label_c">C</option>
-                            <option value="mat_rhs_label_d">D</option>
-                            <option value="mat_rhs_label_e">E</option>
-                        </select>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_a" value="default_value_rhs">Label_RHS</p>
                     </td>
                     <td>
-                        <label id="mat_rhs_label_b" value="default_value_rhs">Label_RHS</label>
-                        <label>(B)</label>
+                        <p style="font-size: 30;text-align: center">(A)</p>
                     </td>
                 </tr>
 
                 <!-- ********************************** Row Start ***************************************  -->
                 <tr>
                     <td>
-                        <label id="mat_lhs_label_c" value="default_value_lhs">Label_lHS</label>
-                        <select id="mat_lhs_select_c">
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_b" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_b" style="font-size: 20px;">
                             <option value="mat_rhs_label_a">A</option>
                             <option value="mat_rhs_label_b">B</option>
                             <option value="mat_rhs_label_c">C</option>
@@ -93,16 +85,20 @@
                         </select>
                     </td>
                     <td>
-                        <label id="mat_rhs_label_c" value="default_value_rhs">Label_RHS</label>
-                        <label>(C)</label>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_b" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(B)</p>
                     </td>
                 </tr>
 
                 <!-- ********************************** Row Start ***************************************  -->
                 <tr>
                     <td>
-                        <label id="mat_lhs_label_d" value="default_value_lhs">Label_lHS</label>
-                        <select id="mat_lhs_select_d">
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_c" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_c" style="font-size: 20px;">
                             <option value="mat_rhs_label_a">A</option>
                             <option value="mat_rhs_label_b">B</option>
                             <option value="mat_rhs_label_c">C</option>
@@ -111,16 +107,20 @@
                         </select>
                     </td>
                     <td>
-                        <label id="mat_rhs_label_d" value="default_value_rhs">Label_RHS</label>
-                        <label>(D)</label>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_c" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(C)</p>
                     </td>
                 </tr>
 
                 <!-- ********************************** Row Start ***************************************  -->
                 <tr>
                     <td>
-                        <label id="mat_lhs_label_e" value="default_value_lhs">Label_lHS</label>
-                        <select id="mat_lhs_select_e">
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_d" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_d" style="font-size: 20px;">
                             <option value="mat_rhs_label_a">A</option>
                             <option value="mat_rhs_label_b">B</option>
                             <option value="mat_rhs_label_c">C</option>
@@ -129,8 +129,32 @@
                         </select>
                     </td>
                     <td>
-                        <label id="mat_rhs_label_e" value="default_value_rhs">Label_RHS</label>
-                        <label>(E)</label>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_d" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(D)</p>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_e" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_e" style="font-size: 20px;">
+                            <option value="mat_rhs_label_a">A</option>
+                            <option value="mat_rhs_label_b">B</option>
+                            <option value="mat_rhs_label_c">C</option>
+                            <option value="mat_rhs_label_d">D</option>
+                            <option value="mat_rhs_label_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_e" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(E)</p>
                     </td>
                 </tr>
 
@@ -152,13 +176,19 @@
             var globalItemsPracticed = -1;
             var pageState = "not_started";
             var differential = 2;
-            var numWalkthrough = 3 - differential;
-            var numMcq = 3 - differential;
-            var numMat = 3 - differential;
+            var numWalkthrough = 20 - differential;
+            var numMcq = 20 - differential;
+            var numMat = 10 - differential;
+            var loaded = false;
 
             <!-- Router -->
 
             function onButtonClick() {
+
+                if (loaded && (globalPrimaryDictionary.length <= 1)) {
+                    alert("All items are done!");
+                    return;
+                }
 
                 if (pageState == "not_started") {
                     if (!load()) {
@@ -167,13 +197,13 @@
                     }
 
 
+                    loaded = true;
                     pageState = "walkthrough";
                     globalCounterIndex = 0;
                     if (!nextWalkthrough()) {
 
                         return;
                     }
-
 
                     /*
                     if (!nextMat()) {
@@ -217,13 +247,14 @@
 
                     if (globalCounterIndex > numMat) {
                         globalCounterIndex = -1;
-                        pageState = "mcq";
+                        pageState = "walkthrough";
+                        numWalkthrough = 5 - differential;
                     }
 
                 }
 
                 globalCounterIndex = globalCounterIndex + 1;
-                var statusText = "globalCounterIndex: " + globalCounterIndex + " pageState: " + pageState + " dictionary-length: " + globalPrimaryDictionary.length + " items-practiced: " + globalItemsPracticed;
+                var statusText = "gci: " + globalCounterIndex + " pst: " + pageState + " dl: " + globalPrimaryDictionary.length + " practiced: " + globalItemsPracticed;
                 document.getElementById("status_bar").innerHTML = statusText;
             }
 
@@ -412,6 +443,10 @@
 
             function nextWalkthrough() {
 
+                if (!document.getElementById("walkthrough_show_meaning").checked) {
+                    document.getElementById("walkthrough_value").style.display = "none";
+                }
+
                 var walkthroughDiv = document.getElementById("walkthrough_div");
                 var mcqDiv = document.getElementById("mcq_div");
                 var matDiv = document.getElementById("mat_div");
@@ -530,6 +565,22 @@
                     s4() + '-' + s4() + s4() + s4();
             }
 
+            function showMeaningBox() {
+                document.getElementById("walkthrough_value").style.display = "block";
+            }
+
+            function toggleMeaningBox() {
+                document.getElementById("walkthrough_show_meaning").checked = !document.getElementById("walkthrough_show_meaning").checked;
+
+                if (document.getElementById("walkthrough_show_meaning").checked) {
+                    //Show meaning box.
+                    document.getElementById("walkthrough_value").style.display = "block";
+                } else {
+                    //Hide meaning box.
+                    document.getElementById("walkthrough_value").style.display = "none";
+                }
+            }
+
             function selA() {
                 document.getElementById("mcq_a").checked = true;
             }
@@ -562,15 +613,15 @@
 
 window.onload = function() {
 var textBox = document.getElementById("primary_input_text");
-textBox.value = `one - 1one
-two - 2two
-three - 3three
-four - 4four
-five - 5five
-six - 6six
-seven - 7seven
-eight - 8eight
-nine - 9nine
+textBox.value = `one - 1one and simple
+two - 2two and the average text content is this much.
+three - 3three ringa ringa roses.
+four - 4four ba ba black sheep have you.
+five - 5five twinkle twinkle little start.
+six - 6six a new page.
+seven - 7seven test data.
+eight - 8eight on average the eighth.
+nine - 9nine small
 zero - 0zero`
 };
 
@@ -588,7 +639,7 @@ zero - 0zero`
             }
             .centerdiv {
                 margin: auto;
-                width: 50%;
+                width: 80%;
                 border: 3px solid green;
                 padding: 10px;
                 text-align: center;
@@ -608,6 +659,8 @@ zero - 0zero`
 
             .bigfont {
                 font-size: 25px;
+                border-collapse: collapse;
+                border-bottom: 1px solid #ddd;
             }
             .statusbarclass {
                 width: 50%;
