@@ -1,0 +1,225 @@
+<html>
+    <body>
+
+        <label>page_state_holder</label>
+        <input id="page_state_holder" type="text" value="dontknow"/>
+        <br/>
+        <label>window_count_holder</label>
+        <input id="window_count_holder" type="text" value="dontknow"/>
+        <br/>
+        <label>index_holder</label>
+        <input id="index_holder" type="text" value="dontknow"/>
+        <br/>
+        <!-- Section: Input -->
+        <div id="input_div" class="centerdiv">
+            <p>
+                <textarea id="primary_input_text" name="Text" rows="15" cols="36">input_key - input_value</textarea>
+                <br/>
+                <br/>
+                <input type="button" class="button" name="Button" value="Submit" onclick="loadDict()" />
+            </p>
+        </div>
+
+        <!-- Section: Walkthrough -->
+        <div hidden id="walkthrough_div" class="centerdiv">
+            <p style="font-size:60" id="walkthrough_key" onclick="showMeaningBox()">Key</p>
+            <p style="font-size:60" id="walkthrough_value">Value</p>
+            <br/>
+            <input type="checkbox" id="walkthrough_show_meaning" checked="true"/><label onclick="toggleMeaningBox()">Show Meaning</label>
+            <br/>
+            <br/>
+            <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
+        </div>
+
+        <!-- Section: MCQ -->
+        <div hidden id="mcq_div" class="centerdiv">
+
+            <p style="font-size:60" id="mcq_question">This is default question.</p>
+            <input id="qid_holder" type="hidden" value="dontknow">
+            <font size="+3">
+            <ul class="answers">
+                <input type="radio" name="mcq_radio_button" value="a" id="mcq_a"><label onclick="selA()" id="label_for_mcq_a">Answer 1</label><br/>
+                <input type="radio" name="mcq_radio_button" value="b" id="mcq_b"><label onclick="selB()" id="label_for_mcq_b">Answer 2</label><br/>
+                <input type="radio" name="mcq_radio_button" value="c" id="mcq_c"><label onclick="selC()" id="label_for_mcq_c">Answer 3</label><br/>
+                <input type="radio" name="mcq_radio_button" value="d" id="mcq_d"><label onclick="selD()" id="label_for_mcq_d">Answer 4</label><br/>
+            </ul>
+            </font>
+            <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
+        </div>
+
+        <!-- Section: MAT -->
+        <div hidden id="mat_div" class="centerdiv">
+            <font size="+7"><p>Match the following</p></font>
+            <table style="width:100%" class="bigfont" border="1">
+                <tr>
+                    <th>A</th>
+                    <th>A &gt B</th>
+                    <th>B</th>
+                    <th>Bi</th>
+                </tr>
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_a" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_a" style="font-size: 20px;">
+                            <option value="mat_rhs_label_a">A</option>
+                            <option value="mat_rhs_label_b">B</option>
+                            <option value="mat_rhs_label_c">C</option>
+                            <option value="mat_rhs_label_d">D</option>
+                            <option value="mat_rhs_label_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_a" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(A)</p>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_b" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_b" style="font-size: 20px;">
+                            <option value="mat_rhs_label_a">A</option>
+                            <option value="mat_rhs_label_b">B</option>
+                            <option value="mat_rhs_label_c">C</option>
+                            <option value="mat_rhs_label_d">D</option>
+                            <option value="mat_rhs_label_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_b" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(B)</p>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_c" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_c" style="font-size: 20px;">
+                            <option value="mat_rhs_label_a">A</option>
+                            <option value="mat_rhs_label_b">B</option>
+                            <option value="mat_rhs_label_c">C</option>
+                            <option value="mat_rhs_label_d">D</option>
+                            <option value="mat_rhs_label_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_c" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(C)</p>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_d" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_d" style="font-size: 20px;">
+                            <option value="mat_rhs_label_a">A</option>
+                            <option value="mat_rhs_label_b">B</option>
+                            <option value="mat_rhs_label_c">C</option>
+                            <option value="mat_rhs_label_d">D</option>
+                            <option value="mat_rhs_label_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_d" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(D)</p>
+                    </td>
+                </tr>
+
+                <!-- ********************************** Row Start ***************************************  -->
+                <tr>
+                    <td>
+                        <p style="font-size:45;text-align: center" id="mat_lhs_label_e" value="default_value_lhs">Label_lHS</p>
+                    </td>
+                    <td align="center">
+                        <select id="mat_lhs_select_e" style="font-size: 20px;">
+                            <option value="mat_rhs_label_a">A</option>
+                            <option value="mat_rhs_label_b">B</option>
+                            <option value="mat_rhs_label_c">C</option>
+                            <option value="mat_rhs_label_d">D</option>
+                            <option value="mat_rhs_label_e">E</option>
+                        </select>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center" id="mat_rhs_label_e" value="default_value_rhs">Label_RHS</p>
+                    </td>
+                    <td>
+                        <p style="font-size: 30;text-align: center">(E)</p>
+                    </td>
+                </tr>
+
+            </table>
+            <br/>
+            <br/>
+            <input type="button" class="button" name="Button" value="Submit" onclick="onButtonClick()" />
+        </div>
+
+        <br/>
+        <div class="statusbarclass">
+            <label id="status_bar" align="center"></label>
+        </div>
+
+        <script type="text/javascript" src="impl.js"></script> 
+        <style>
+            .button {
+                background-color: #4CAF50; /* Green */
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+            }
+            .centerdiv {
+                margin: auto;
+                width: 80%;
+                border: 3px solid green;
+                padding: 10px;
+                text-align: center;
+            }
+            .centerdis {
+                position: relative;
+                width: 300px;
+                width: 50%;
+                height: 200px;
+                height: 80%;
+                z-index: 30;
+                top: 20%;
+                left: 50%;
+                margin: -100px 0 0 -150px;
+                text-align: center;
+            }
+
+            .bigfont {
+                font-size: 25px;
+                border-collapse: collapse;
+                border-bottom: 1px solid #ddd;
+            }
+            .statusbarclass {
+                width: 50%;
+                margin: 0 auto; 
+                text-align: center;
+            }
+        </style>
+    </body>
+<html>
