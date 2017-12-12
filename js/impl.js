@@ -1,39 +1,20 @@
 
 
 var globalPrimaryDictionary = new Array();
-var globalItemsPracticed = -1;
+var globalItemsPracticed = 0;
 var globalStartedAt = new Date();
 var pickRandomWtItem = false;
+var dontKnowStaticValue = "dontknow";
 
-/*
+var panelDefaultColor = "white";
+var panelShadedColor = "Gainsboro";
 
-__________               __                
-\______   \ ____  __ ___/  |_  ___________ 
- |       _//  _ \|  |  \   __\/ __ \_  __ \
- |    |   (  <_> )  |  /|  | \  ___/|  | \/
- |____|_  /\____/|____/ |__|  \___  >__|   
-        \/                        \/       
-
-*/
-function loadDict() {
-
-    var value = load();
-
-    if (!value) {
-
-        return;
-    }
-
-    document.getElementById("page_state_holder").value = "walkthrough";
-    document.getElementById("window_count_holder").value = "3";
-    document.getElementById("index_holder").value = "-1";
-    document.getElementById("status_bar").style.display = "block";
-    
-    process(false);
-}
-
-function onButtonClick() {
-    process(true);
+var colorCodeMapping = {
+    a: "mintcream",
+    b: "mistyrose",
+    c: "aliceblue",
+    d: "thistle",
+    e: "silver"
 }
 
 /*
@@ -106,7 +87,7 @@ function process(doValidate) {
     updateIndex();
     fillContent();
     updateStatusBar();
-    //reloadPanels();
+    resetPanels();
 }
 
 
@@ -140,7 +121,7 @@ function validateWalkthrough() {
 
     var index = parseInt(document.getElementById("index_holder").value);
 
-    if (index >= globalPrimaryDictionary.length) {
+    if ((!pickRandomWtItem) && index >= globalPrimaryDictionary.length) {
 
         alert("All items are done");
         return false;
@@ -181,7 +162,7 @@ function validateMcq() {
     //At this stage the answer is correct!
     //So delete the question.
     var itemsToDelete = [hiddenQid];
-    console.log("Requesting to delete: " + itemsToDelete);
+    console.log("Requesting to delete from validateMcq: " + itemsToDelete);
     deleteItems(itemsToDelete);
     globalItemsPracticed = globalItemsPracticed + 1;
 
@@ -212,19 +193,37 @@ function assertMatSelection(word) {
 function validateMat() {
 
     var selectionItems = ["a", "b", "c", "d", "e"];
-
+    var lhsTemplate = "mat_td_lhs_lab_";
+    var lhsLabelTemplate = "mat_lhs_label_";
+    var rhsLabelTemplate = "mat_rhs_label_";
     var collectedQids = [];
 
     for (i=0; i<selectionItems.length; i++) {
+        var lhsTdId = lhsTemplate + selectionItems[i];
+        var currentLhsTdColor = document.getElementById(lhsTdId).style.backgroundColor;
+        var itemsOnRhs = getRhsElementsIdsWithColor(currentLhsTdColor);
 
-        var value = assertMatSelection(selectionItems[i]);
-        if (value === false) {
-            return;
-        } else {
-            collectedQids.push(value);
+        if (!itemsOnRhs || itemsOnRhs.length < 1) {
+
+            alert("Please make selection on position: " + selectionItems[i]);
+            return false;
         }
+
+        var rhsTdId = itemsOnRhs[0];
+        var lastCharOfRhsTdId = rhsTdId[rhsTdId.length - 1];
+        var lhsQid = document.getElementById(lhsLabelTemplate + selectionItems[i]).value;
+        var rhsQid = document.getElementById(rhsLabelTemplate + lastCharOfRhsTdId).value;
+
+        if (lhsQid !== rhsQid) {
+
+            alert("Wrong answer for: " + selectionItems[i]);
+            return false;
+        }
+
+        collectedQids.push(lhsQid);
     }
 
+    console.log("Requesting to delete from validateMat: " + collectedQids);
     deleteItems(collectedQids);
     globalItemsPracticed = globalItemsPracticed + 5;
     return true;
@@ -271,10 +270,10 @@ function getNextGroup(currentGroup) {
 
     if (currentGroup == "walkthrough") {
 
-        return { group: "mcq", length: 5 }
+        return { group: "mcq", length: 7 }
     } else if (currentGroup == "mcq") {
 
-        return { group: "mat", length: 5 }
+        return { group: "mat", length: 7 }
     } else if (currentGroup == "mat") {
 
         pickRandomWtItem = true;
@@ -427,12 +426,6 @@ function fillMat() {
     document.getElementById("mat_lhs_label_e").innerHTML = globalPrimaryDictionary[r5]["key"];
     document.getElementById("mat_lhs_label_e").value = globalPrimaryDictionary[r5]["qid"];
 
-    //Reset the select boxes
-    document.getElementById("mat_lhs_select_a").value = "mat_rhs_label_a";
-    document.getElementById("mat_lhs_select_b").value = "mat_rhs_label_a";
-    document.getElementById("mat_lhs_select_c").value = "mat_rhs_label_a";
-    document.getElementById("mat_lhs_select_d").value = "mat_rhs_label_a";
-    document.getElementById("mat_lhs_select_e").value = "mat_rhs_label_a";
 
     var originalState = [r1, r2, r3, r4, r5];
     var shuffeledArray = shuffle(originalState);
@@ -472,6 +465,62 @@ function updateStatusBar() {
     var numMinutes = round(diffInMin, 2);
     var statusText = "gci: " + indexValue + " pst: " + pageState + " dl: " + globalPrimaryDictionary.length + " practiced: " + globalItemsPracticed + " mins: " + toInteger(numMinutes) + " seconds: " + toInteger(surplusSeconds); 
     document.getElementById("status_bar").innerHTML = statusText;
+}
+
+/*
+
+__________                      __    __________                      .__          
+\______   \ ____   ______ _____/  |_  \______   \_____    ____   ____ |  |   ______
+ |       _// __ \ /  ___// __ \   __\  |     ___/\__  \  /    \_/ __ \|  |  /  ___/
+ |    |   \  ___/ \___ \\  ___/|  |    |    |     / __ \|   |  \  ___/|  |__\___ \ 
+ |____|_  /\___  >____  >\___  >__|    |____|    (____  /___|  /\___  >____/____  >
+        \/     \/     \/     \/                       \/     \/     \/          \/ 
+*/
+
+function resetPanels() {
+
+    var pageState = document.getElementById("page_state_holder").value;
+
+    if (pageState === "walkthrough") {
+
+        return resetWalkthroughPanel();
+    } else if (pageState === "mcq") {
+
+        return resetMcqPanel();
+    } else if (pageState === "mat") {
+
+        return resetMatPanel();
+    } else {
+
+        alert("Page state not defined");
+    }
+}
+
+function resetWalkthroughPanel() {
+
+    if (document.getElementById("walkthrough_show_meaning").checked) {
+        //Show meaning box.
+        document.getElementById("walkthrough_value").style.display = "block";
+    } else {
+        //Hide meaning box.
+        document.getElementById("walkthrough_value").style.display = "none";
+    }
+}
+
+function resetMcqPanel() {
+
+}
+
+function resetMatPanel() {
+
+    var panelSuffixes = ["a", "b", "c", "d", "e"];
+
+    for (var i = 0; i<panelSuffixes.length; i++) {
+        document.getElementById("mat_td_lhs_lab_" + panelSuffixes[i]).style.backgroundColor = panelDefaultColor;
+
+        document.getElementById("mat_td_rhs_lab_" + panelSuffixes[i]).style.backgroundColor = panelDefaultColor;
+    }
+
 }
 
 /*
@@ -525,37 +574,7 @@ function guid() {
         s4() + '-' + s4() + s4() + s4();
 }
 
-function showMeaningBox() {
-    document.getElementById("walkthrough_value").style.display = "block";
-}
 
-function toggleMeaningBox() {
-    document.getElementById("walkthrough_show_meaning").checked = !document.getElementById("walkthrough_show_meaning").checked;
-
-    if (document.getElementById("walkthrough_show_meaning").checked) {
-        //Show meaning box.
-        document.getElementById("walkthrough_value").style.display = "block";
-    } else {
-        //Hide meaning box.
-        document.getElementById("walkthrough_value").style.display = "none";
-    }
-}
-
-function selA() {
-    document.getElementById("mcq_a").checked = true;
-}
-
-function selB() {
-    document.getElementById("mcq_b").checked = true;
-}
-
-function selC() {
-    document.getElementById("mcq_c").checked = true;
-}
-
-function selD() {
-    document.getElementById("mcq_d").checked = true;
-}
 
 function deleteItems(items) {
     for (i=globalPrimaryDictionary.length - 1; i >= 0;  i--) {
@@ -582,6 +601,169 @@ function toInteger(number){
     ); 
 };
 
+
+
+/*
+  ___ ___   __          .__     __      __        .__   __      __  .__                              .__     
+ /   |   \_/  |_  _____ |  |   /  \    /  \_____  |  | |  | ___/  |_|  |_________  ____  __ __  ____ |  |__  
+/    ~    \   __\/     \|  |   \   \/\/   /\__  \ |  | |  |/ /\   __\  |  \_  __ \/  _ \|  |  \/ ___\|  |  \ 
+\    Y    /|  | |  Y Y  \  |__  \        /  / __ \|  |_|    <  |  | |   Y  \  | \(  <_> )  |  / /_/  >   Y  \
+ \___|_  / |__| |__|_|  /____/   \__/\  /  (____  /____/__|_ \ |__| |___|  /__|   \____/|____/\___  /|___|  /
+       \/             \/              \/        \/          \/           \/                  /_____/      \/ 
+*/
+
+function hwalShowMeaningBox() {
+    document.getElementById("walkthrough_value").style.display = "block";
+}
+
+function hwalToggleMeaningBox() {
+    document.getElementById("walkthrough_show_meaning").checked = !document.getElementById("walkthrough_show_meaning").checked;
+
+    if (document.getElementById("walkthrough_show_meaning").checked) {
+        //Show meaning box.
+        document.getElementById("walkthrough_value").style.display = "block";
+    } else {
+        //Hide meaning box.
+        document.getElementById("walkthrough_value").style.display = "none";
+    }
+}
+
+/*
+  ___ ___   __          .__       _____                
+ /   |   \_/  |_  _____ |  |     /     \   ____  ______
+/    ~    \   __\/     \|  |    /  \ /  \_/ ___\/ ____/
+\    Y    /|  | |  Y Y  \  |__ /    Y    \  \__< <_|  |
+ \___|_  / |__| |__|_|  /____/ \____|__  /\___  >__   |
+       \/             \/               \/     \/   |__|
+*/
+
+function hmcqSelChange(element) {
+    var elementId = element.id;
+    var lastChar = elementId[elementId.length - 1];
+    document.getElementById("mcq_" + lastChar).checked = true;
+    hcomOnButtonClick();
+}
+
+/*
+  ___ ___   __          .__       _____          __   
+ /   |   \_/  |_  _____ |  |     /     \ _____ _/  |_ 
+/    ~    \   __\/     \|  |    /  \ /  \\__  \\   __\
+\    Y    /|  | |  Y Y  \  |__ /    Y    \/ __ \|  |  
+ \___|_  / |__| |__|_|  /____/ \____|__  (____  /__|  
+       \/             \/               \/     \/      
+*/
+
+function hmatMarkLastLhsSelection(element) {
+    var currentColor = document.getElementById(element.id).style.backgroundColor;
+
+    document.getElementById("last_lhs_selection_id_holder").value = element.id;
+
+    var lastSelection = element.id;
+    var lastChar = lastSelection[lastSelection.length - 1];
+    document.getElementById(element.id).style.backgroundColor = colorCodeMapping[lastChar];
+}
+
+function getRhsElementsIdsWithColor(color) {
+    var rhsElements = Array();
+
+    if ((!color) || color === panelDefaultColor) {
+
+        return rhsElements;
+    }
+
+    var itemsToCheck = ["a", "b", "c", "d", "e"];
+
+    for (var i=0; i<itemsToCheck.length; i++) {
+
+        var keyVar = itemsToCheck[i];
+        var fullKey = "mat_td_rhs_lab_" + keyVar;
+
+        if (document.getElementById(fullKey).style.backgroundColor === color) {
+
+            rhsElements.push(fullKey);
+        }
+    }
+
+    return rhsElements;
+}
+
+function hmatMatchLastSelection(element) {
+
+    var lastSelection = document.getElementById("last_lhs_selection_id_holder").value;
+
+    if ((!lastSelection) || (lastSelection === dontKnowStaticValue)) {
+        return;
+    }
+
+    var lastChar = lastSelection[lastSelection.length - 1];
+    document.getElementById(element.id).style.backgroundColor = colorCodeMapping[lastChar];
+
+    var otherElementsWithSameColor = getRhsElementsIdsWithColor(colorCodeMapping[lastChar]);
+    document.getElementById("last_lhs_selection_id_holder").value = dontKnowStaticValue;
+    if (!otherElementsWithSameColor) {
+
+        return;
+    }
+
+    var thisElementId = element.id;
+    for (var i=0; i<otherElementsWithSameColor.length; i++) {
+
+        var otherElementId = otherElementsWithSameColor[i];
+
+        if (thisElementId !== otherElementId) {
+
+            document.getElementById(otherElementId).style.backgroundColor = panelDefaultColor;
+        }
+    }
+}
+
+function hmatResetMatSelections() {
+
+    var itemsToCheck = ["a", "b", "c", "d", "e"];
+
+    for (var i=0; i<itemsToCheck.length; i++) {
+
+        var keyVar = itemsToCheck[i];
+        document.getElementById("mat_td_lhs_lab_" + keyVar).style.backgroundColor = panelDefaultColor;
+        document.getElementById("mat_td_rhs_lab_" + keyVar).style.backgroundColor = panelDefaultColor;
+    }
+
+    document.getElementById("last_lhs_selection_id_holder").value = dontKnowStaticValue;
+}
+
+/*
+  ___ ___   __          .__    _________                                       
+ /   |   \_/  |_  _____ |  |   \_   ___ \  ____   _____   _____   ____   ____  
+/    ~    \   __\/     \|  |   /    \  \/ /  _ \ /     \ /     \ /  _ \ /    \ 
+\    Y    /|  | |  Y Y  \  |__ \     \___(  <_> )  Y Y  \  Y Y  (  <_> )   |  \
+ \___|_  / |__| |__|_|  /____/  \______  /\____/|__|_|  /__|_|  /\____/|___|  /
+       \/             \/               \/             \/      \/            \/ 
+*/
+
+function hcomOnButtonClick() {
+    process(true);
+}
+
+function hinPloadDict() {
+
+    var value = load();
+
+    if (!value) {
+
+        return;
+    }
+
+    document.getElementById("page_state_holder").value = "walkthrough";
+    //document.getElementById("page_state_holder").value = "mat";
+
+    var numOfInitialWalkThrough = 20;
+    document.getElementById("window_count_holder").value = (numOfInitialWalkThrough + 1).toString();
+    document.getElementById("index_holder").value = "-1";
+    document.getElementById("status_bar").style.display = "block";
+    
+    process(false);
+}
+
 window.onload = function() {
     var textBox = document.getElementById("primary_input_text");
     textBox.value = "one - 1one and simple\n"
@@ -595,3 +777,4 @@ window.onload = function() {
     textBox.value += "nine - 9nine small\n"
     textBox.value += "zero - 0zero"
 };
+
