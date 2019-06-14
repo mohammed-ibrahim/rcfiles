@@ -2,6 +2,7 @@
 alias json='python ~/rcfiles/jsonlint.py'
 alias s='python ~/rcfiles/file_search.py'
 alias backup='python ~/rcfiles/backup_by_git_status.py'
+alias ks='python ~/rcfiles/submodule.py'
 export HISTFILESIZE=8000
 alias g='git'
 alias gs='git status'
