@@ -1,0 +1,15 @@
+
+alias json='python ~/rcfiles/jsonlint.py'
+alias s='python ~/rcfiles/file_search.py'
+alias backup='python ~/rcfiles/backup_by_git_status.py'
+export HISTFILESIZE=8000
+alias g='git'
+alias gs='git status'
+alias gl='git log'
+alias ll='ls -ltr'
+alias lh='ls -lhtr'
+
+
+LOCAL_BACKUP_DIR
+SCP_DEPLOY_LOCATION
+
