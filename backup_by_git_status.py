@@ -28,6 +28,10 @@ def get_modified_files_from_git_status(process_text):
     cleared_lines = [remove_git_formatting(g) for g in lines]
     return cleared_lines
 
+def get_modified_files_from_git_status_v2(process_text):
+    lines = [x[3:] for x in process_text.split("\n") if len(x.strip()) > 0]
+    return lines
+
 
 if __name__ == "__main__":
 
@@ -39,8 +43,8 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     print("Loading files from :: %s" % cwd)
 
-    process_output = s_run_process_and_get_output("git status", True)
-    modified_files_from_git_status = get_modified_files_from_git_status(process_output)
+    process_output = s_run_process_and_get_output("git status -s", True)
+    modified_files_from_git_status = get_modified_files_from_git_status_v2(process_output)
 
     path_parts = cwd.split("/")
     required_notifier = path_parts.pop().strip()
