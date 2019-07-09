@@ -71,21 +71,38 @@ def get_build_and_deploy_statements(proj_dir, deploy_suffix):
 
     return (cmd, cmd2)
 
+update_branch_template = """
+git commit --amend
+git commit --amend --no-edit
+git pull
+git rebase
+git push origin :topic/%s/%s
+git push origin HEAD:topic/%s/%s
+"""
+
+NEW_LINE = "\n"
+GS = 'gs'
+FILES = 'files'
+LAST_COMMIT = 'last_commit'
+UPDATE_BRANCH = 'ub'
+
+PRIMARY_OPERATIONS = [
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH
+]
 
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print("usage: 1 :: build gs")
-        print("usage: 2 :: build files [space-seperated-files]")
-        print("usage: 3 :: build files from last commit")
+        print("usage: :: build [%s]" % (",".join(PRIMARY_OPERATIONS)))
         sys.exit(1)
 
     mode = sys.argv[1]
 
-    if mode not in ["gs", "files", "last_commit"]:
-        print("usage: 1 :: build gs")
-        print("usage: 2 :: build files [space-seperated-files]")
-        print("usage: 3 :: build last_commit")
+    if mode not in PRIMARY_OPERATIONS:
+        print("usage: 1 :: build %s" % GS)
+        print("usage: 2 :: build %s [space-seperated-files]" % FILES)
+        print("usage: 3 :: build %s" % LAST_COMMIT)
+        print("usage: 3 :: build %s" % UPDATE_BRANCH)
         sys.exit(1)
 
     deploy_suffix = os.environ.get('SCP_DEPLOY_LOCATION', None)
@@ -96,12 +113,12 @@ if __name__ == "__main__":
     print("Deploy suffix: %s" % deploy_suffix)
     files = []
 
-    if mode == "gs":
+    if mode == GS:
 
         process_output = s_run_process_and_get_output("git status")
         files = get_modified_files_from_git_status(process_output)
 
-    elif mode == "files":
+    elif mode == FILES:
 
         if len(sys.argv) < 3:
             print("Insufficient files")
@@ -110,7 +127,7 @@ if __name__ == "__main__":
         for i in range(2, len(sys.argv)):
             files.append(sys.argv[i])
 
-    elif mode == "last_commit":
+    elif mode == LAST_COMMIT:
         last_commit_message = s_run_process_and_get_output("git log -1")
         commit_id = last_commit_message.split("\n")[0].split(" ")[1]
         print("fetching files from commit id: " + commit_id)
@@ -120,6 +137,19 @@ if __name__ == "__main__":
         for file_c in files_in_last_commit.split("\n"):
             if len(file_c) > 0:
                 files.append(file_c)
+
+    elif mode == UPDATE_BRANCH:
+        branch_details = s_run_process_and_get_output("git branch")
+        current_branch = [x for x in branch_details.split(NEW_LINE) if "*" in x][0]
+        current_branch = current_branch[2:]
+
+        current_user_details = s_run_process_and_get_output("whoami")
+        current_user = current_user_details.split(NEW_LINE)[0]
+
+
+        cmd = update_branch_template % (current_user, current_branch, current_user, current_branch)
+        print(cmd)
+        sys.exit(1)
 
     else:
         print("Invalid mode : %s" % mode)
