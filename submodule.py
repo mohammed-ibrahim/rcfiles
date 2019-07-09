@@ -85,6 +85,7 @@ if __name__ == "__main__":
     if mode not in ["gs", "files", "last_commit"]:
         print("usage: 1 :: build gs")
         print("usage: 2 :: build files [space-seperated-files]")
+        print("usage: 3 :: build last_commit")
         sys.exit(1)
 
     deploy_suffix = os.environ.get('SCP_DEPLOY_LOCATION', None)
