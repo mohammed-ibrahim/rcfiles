@@ -57,7 +57,11 @@ def get_build_and_deploy_statements(proj_dir, deploy_suffix):
     target_dir = os.path.join(proj_dir, "target")
     jars = [a for a in os.listdir(target_dir) if a.endswith(".jar") and not a.endswith("tests.jar")]
 
-    required_jar = jars[0]
+    if len(jars) > 0:
+        required_jar = jars[0]
+    else:
+        required_jar = "jar-location-not-found.jar"
+
     jar_full_path = os.path.join(proj_dir, "target", required_jar)
 
     cmd2 = None
@@ -73,11 +77,12 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("usage: 1 :: build gs")
         print("usage: 2 :: build files [space-seperated-files]")
+        print("usage: 3 :: build files from last commit")
         sys.exit(1)
 
     mode = sys.argv[1]
 
-    if mode not in ["gs", "files"]:
+    if mode not in ["gs", "files", "last_commit"]:
         print("usage: 1 :: build gs")
         print("usage: 2 :: build files [space-seperated-files]")
         sys.exit(1)
@@ -103,6 +108,17 @@ if __name__ == "__main__":
 
         for i in range(2, len(sys.argv)):
             files.append(sys.argv[i])
+
+    elif mode == "last_commit":
+        last_commit_message = s_run_process_and_get_output("git log -1")
+        commit_id = last_commit_message.split("\n")[0].split(" ")[1]
+        print("fetching files from commit id: " + commit_id)
+        last_commit_list_cmd = "git diff-tree --no-commit-id --name-only -r %s" % commit_id
+        files_in_last_commit = s_run_process_and_get_output(last_commit_list_cmd)
+
+        for file_c in files_in_last_commit.split("\n"):
+            if len(file_c) > 0:
+                files.append(file_c)
 
     else:
         print("Invalid mode : %s" % mode)
