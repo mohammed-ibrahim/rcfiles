@@ -80,11 +80,17 @@ git push origin :topic/%s/%s
 git push origin HEAD:topic/%s/%s
 """
 
+def get_cmd(code, desc):
+    return {
+        "code": code,
+        "desc": desc
+    }
+
 NEW_LINE = "\n"
-GS = 'gs'
-FILES = 'files'
-LAST_COMMIT = 'last_commit'
-UPDATE_BRANCH = 'ub'
+GS = get_cmd('gs', 'get build command from git status')
+FILES = get_cmd('files', 'get build command from manually supplied comma seperated files')
+LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
+UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
 
 PRIMARY_OPERATIONS = [
     GS, FILES, LAST_COMMIT, UPDATE_BRANCH
@@ -92,18 +98,25 @@ PRIMARY_OPERATIONS = [
 
 if __name__ == "__main__":
 
+    primary_operation_codes = [x['code'] for x in PRIMARY_OPERATIONS]
     if len(sys.argv) < 2:
-        print("usage: :: build [%s]" % (",".join(PRIMARY_OPERATIONS)))
+        print("usage: :: build [%s]" % (",".join(primary_operation_codes)))
+        for cmd in PRIMARY_OPERATIONS:
+            print("build %s \t\t[%s]" % (cmd['code'], cmd['desc']))
         sys.exit(1)
 
     mode = sys.argv[1]
 
-    if mode not in PRIMARY_OPERATIONS:
-        print("usage: 1 :: build %s" % GS)
-        print("usage: 2 :: build %s [space-seperated-files]" % FILES)
-        print("usage: 3 :: build %s" % LAST_COMMIT)
-        print("usage: 3 :: build %s" % UPDATE_BRANCH)
+    if mode not in primary_operation_codes:
+        print("usage: 1 :: build %s [-n]" % GS['code'])
+        print("usage: 2 :: build %s [space-seperated-files] [-n]" % FILES['code'])
+        print("usage: 3 :: build %s [-n]" % LAST_COMMIT['code'])
+        print("usage: 3 :: build %s" % UPDATE_BRANCH['code'])
         sys.exit(1)
+
+    add_scp = True
+    if "-n" in sys.argv:
+        add_scp = False
 
     deploy_suffix = os.environ.get('SCP_DEPLOY_LOCATION', None)
     if deploy_suffix is None:
@@ -113,12 +126,12 @@ if __name__ == "__main__":
     print("Deploy suffix: %s" % deploy_suffix)
     files = []
 
-    if mode == GS:
+    if mode == GS['code']:
 
         process_output = s_run_process_and_get_output("git status")
         files = get_modified_files_from_git_status(process_output)
 
-    elif mode == FILES:
+    elif mode == FILES['code']:
 
         if len(sys.argv) < 3:
             print("Insufficient files")
@@ -127,7 +140,7 @@ if __name__ == "__main__":
         for i in range(2, len(sys.argv)):
             files.append(sys.argv[i])
 
-    elif mode == LAST_COMMIT:
+    elif mode == LAST_COMMIT['code']:
         last_commit_message = s_run_process_and_get_output("git log -1")
         commit_id = last_commit_message.split("\n")[0].split(" ")[1]
         print("fetching files from commit id: " + commit_id)
@@ -138,7 +151,7 @@ if __name__ == "__main__":
             if len(file_c) > 0:
                 files.append(file_c)
 
-    elif mode == UPDATE_BRANCH:
+    elif mode == UPDATE_BRANCH['code']:
         branch_details = s_run_process_and_get_output("git branch")
         current_branch = [x for x in branch_details.split(NEW_LINE) if "*" in x][0]
         current_branch = current_branch[2:]
@@ -172,7 +185,8 @@ if __name__ == "__main__":
 
         cmd_list.append("cd %s" % full_path)
         cmd_list.append(c1)
-        cmd_list.append(c2)
+        if add_scp:
+            cmd_list.append(c2)
 
 
     cmd_list.append("cd %s" % cwd)
