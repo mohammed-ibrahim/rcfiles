@@ -75,11 +75,12 @@ def get_build_and_deploy_statements(proj_dir, deploy_suffix):
     return (cmd, cmd2)
 
 update_branch_template = """
+git branch --set-upstream-to=origin/master %s
 git commit --amend
 git commit --amend --no-edit
 git pull
 git rebase
-git push origin :topic/%s/%s
+git push origin :topic/%s/%s &&
 git push origin HEAD:topic/%s/%s
 """
 
@@ -165,7 +166,7 @@ if __name__ == "__main__":
         current_user = current_user_details.split(NEW_LINE)[0]
 
 
-        cmd = update_branch_template % (current_user, current_branch, current_user, current_branch)
+        cmd = update_branch_template % (current_branch, current_user, current_branch, current_user, current_branch)
         print(cmd)
         sys.exit(1)
 
