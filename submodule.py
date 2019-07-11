@@ -1,6 +1,9 @@
 import subprocess
 import os
 import sys
+import datetime
+import time
+import pyperclip
 
 
 def run_interactive(exe):
@@ -91,9 +94,10 @@ GS = get_cmd('gs', 'get build command from git status')
 FILES = get_cmd('files', 'get build command from manually supplied comma seperated files')
 LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
+TS = get_cmd('ts', 'get time stamp for backup location')
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS
 ]
 
 if __name__ == "__main__":
@@ -112,6 +116,7 @@ if __name__ == "__main__":
         print("usage: 2 :: build %s [space-seperated-files] [-n]" % FILES['code'])
         print("usage: 3 :: build %s [-n]" % LAST_COMMIT['code'])
         print("usage: 3 :: build %s" % UPDATE_BRANCH['code'])
+        print("usage: 3 :: build %s" % TS['code'])
         sys.exit(1)
 
     add_scp = True
@@ -162,6 +167,22 @@ if __name__ == "__main__":
 
         cmd = update_branch_template % (current_user, current_branch, current_user, current_branch)
         print(cmd)
+        sys.exit(1)
+
+    elif mode == TS['code']:
+        local_directory = os.environ.get('LOCAL_BACKUP_DIR', None)
+        if local_directory is None:
+            print("LOCAL_BACKUP_DIR is not set")
+            sys.exit(1)
+
+        cwd = os.getcwd()
+        path_parts = cwd.split("/")
+        required_notifier = path_parts.pop().strip()
+
+        ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
+        fully_qualified_path_for_backup = os.path.join(local_directory, "%s-%s" % (ts, required_notifier))
+        pyperclip.copy(fully_qualified_path_for_backup)
+        print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
         sys.exit(1)
 
     else:
