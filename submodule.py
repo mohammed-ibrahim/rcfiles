@@ -96,11 +96,11 @@ FILES = get_cmd('files', 'get build command from manually supplied comma seperat
 LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
 TS = get_cmd('ts', 'get time stamp for backup location')
-GSH = get_cmd('gsh', 'save last commit diff & get open link')
+HEAD = get_cmd('head', 'save last commit diff & get open link')
 DIFF = get_cmd('diff', 'save get diff & get open link')
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, GSH, DIFF
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, DIFF
 ]
 
 def get_new_fcn():
@@ -199,7 +199,7 @@ if __name__ == "__main__":
         print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
         sys.exit(0)
 
-    elif mode == GSH['code']:
+    elif mode == HEAD['code']:
         head_diff = s_run_process_and_get_output('git show HEAD')
         file_name = "%s.diff" % get_new_fcn()
         write_to_file(file_name, head_diff)
