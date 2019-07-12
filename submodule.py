@@ -96,10 +96,32 @@ FILES = get_cmd('files', 'get build command from manually supplied comma seperat
 LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
 TS = get_cmd('ts', 'get time stamp for backup location')
+GSH = get_cmd('gsh', 'get last commit diff')
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, GSH
 ]
+
+def get_new_fcn():
+    local_directory = os.environ.get('LOCAL_BACKUP_DIR', None)
+    if local_directory is None:
+        print("LOCAL_BACKUP_DIR is not set")
+        sys.exit(1)
+
+    cwd = os.getcwd()
+    path_parts = cwd.split("/")
+    required_notifier = path_parts.pop().strip()
+
+    ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
+    fully_qualified_path_for_backup = os.path.join(local_directory, "%s-%s" % (ts, required_notifier))
+    return fully_qualified_path_for_backup
+
+
+def write_to_file(file_name, content):
+    with open(file_name, "w") as file_pointer:
+        file_pointer.write(content)
+
+    print("File write complete: " + file_name)
 
 if __name__ == "__main__":
 
@@ -168,23 +190,20 @@ if __name__ == "__main__":
 
         cmd = update_branch_template % (current_branch, current_user, current_branch, current_user, current_branch)
         print(cmd)
-        sys.exit(1)
+        sys.exit(0)
 
     elif mode == TS['code']:
-        local_directory = os.environ.get('LOCAL_BACKUP_DIR', None)
-        if local_directory is None:
-            print("LOCAL_BACKUP_DIR is not set")
-            sys.exit(1)
-
-        cwd = os.getcwd()
-        path_parts = cwd.split("/")
-        required_notifier = path_parts.pop().strip()
-
-        ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
-        fully_qualified_path_for_backup = os.path.join(local_directory, "%s-%s" % (ts, required_notifier))
+        fully_qualified_path_for_backup = get_new_fcn()
         pyperclip.copy(fully_qualified_path_for_backup)
         print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
-        sys.exit(1)
+        sys.exit(0)
+
+    elif mode == GSH['code']:
+        head_diff = s_run_process_and_get_output('git show HEAD')
+        file_name = "%s.diff" % get_new_fcn()
+        write_to_file(file_name, head_diff)
+        pyperclip.copy("vi %s" % file_name)
+        sys.exit(0)
 
     else:
         print("Invalid mode : %s" % mode)
