@@ -96,8 +96,8 @@ FILES = get_cmd('files', 'get build command from manually supplied comma seperat
 LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
 TS = get_cmd('ts', 'get time stamp for backup location')
-GSH = get_cmd('gsh', 'get last commit diff')
-DIFF = get_cmd('diff', 'get diff saved to a file')
+GSH = get_cmd('gsh', 'save last commit diff & get open link')
+DIFF = get_cmd('diff', 'save get diff & get open link')
 
 PRIMARY_OPERATIONS = [
     GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, GSH, DIFF
@@ -130,17 +130,17 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("usage: :: build [%s]" % (",".join(primary_operation_codes)))
         for cmd in PRIMARY_OPERATIONS:
-            print("build %s \t\t[%s]" % (cmd['code'], cmd['desc']))
+            print("\t\t %s \t\t[%s]" % (cmd['code'], cmd['desc']))
         sys.exit(1)
 
     mode = sys.argv[1]
 
     if mode not in primary_operation_codes:
-        print("usage: 1 :: build %s [-n]" % GS['code'])
-        print("usage: 2 :: build %s [space-seperated-files] [-n]" % FILES['code'])
-        print("usage: 3 :: build %s [-n]" % LAST_COMMIT['code'])
-        print("usage: 3 :: build %s" % UPDATE_BRANCH['code'])
-        print("usage: 3 :: build %s" % TS['code'])
+        print("usage: 1 :: \t\t %s [-n]" % GS['code'])
+        print("usage: 2 :: \t\t %s [space-seperated-files] [-n]" % FILES['code'])
+        print("usage: 3 :: \t\t %s [-n]" % LAST_COMMIT['code'])
+        print("usage: 3 :: \t\t %s" % UPDATE_BRANCH['code'])
+        print("usage: 3 :: \t\t %s" % TS['code'])
         sys.exit(1)
 
     add_scp = True
