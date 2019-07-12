@@ -97,9 +97,10 @@ LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
 TS = get_cmd('ts', 'get time stamp for backup location')
 GSH = get_cmd('gsh', 'get last commit diff')
+DIFF = get_cmd('diff', 'get diff saved to a file')
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, GSH
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, GSH, DIFF
 ]
 
 def get_new_fcn():
@@ -202,6 +203,13 @@ if __name__ == "__main__":
         head_diff = s_run_process_and_get_output('git show HEAD')
         file_name = "%s.diff" % get_new_fcn()
         write_to_file(file_name, head_diff)
+        pyperclip.copy("vi %s" % file_name)
+        sys.exit(0)
+
+    elif mode == DIFF['code']:
+        git_diff = s_run_process_and_get_output('git diff')
+        file_name = "%s.diff" % get_new_fcn()
+        write_to_file(file_name, git_diff)
         pyperclip.copy("vi %s" % file_name)
         sys.exit(0)
 
