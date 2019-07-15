@@ -4,6 +4,7 @@ import sys
 import datetime
 import time
 import pyperclip
+import re
 
 
 def run_interactive(exe):
@@ -103,26 +104,44 @@ PRIMARY_OPERATIONS = [
     GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, DIFF
 ]
 
-def get_new_fcn():
-    local_directory = os.environ.get('LOCAL_BACKUP_DIR', None)
-    if local_directory is None:
-        print("LOCAL_BACKUP_DIR is not set")
-        sys.exit(1)
+def get_ts():
+    return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
 
+def get_cwd_name():
     cwd = os.getcwd()
     path_parts = cwd.split("/")
-    required_notifier = path_parts.pop().strip()
-
-    ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
-    fully_qualified_path_for_backup = os.path.join(local_directory, "%s-%s" % (ts, required_notifier))
-    return fully_qualified_path_for_backup
-
+    cwd_name = path_parts.pop().strip()
+    return cwd_name
 
 def write_to_file(file_name, content):
     with open(file_name, "w") as file_pointer:
         file_pointer.write(content)
 
     print("File write complete: " + file_name)
+
+def get_param(index):
+    if len(sys.argv) > index:
+        return sys.argv[index]
+
+    return None
+
+def slugify(text):
+    output = re.sub(r'\W+', '-', text)
+    return output
+
+def get_qualifier_with_ctx():
+    ctx = get_param(2)
+    if ctx is None:
+        ctx = get_cwd_name()
+    else:
+        ctx = slugify(ctx)
+
+    local_directory = os.environ.get('LOCAL_BACKUP_DIR', None)
+    if local_directory is None:
+        print("LOCAL_BACKUP_DIR is not set")
+        sys.exit(1)
+
+    return os.path.join(local_directory, "%s-%s" % (ctx, get_ts()))
 
 if __name__ == "__main__":
 
@@ -194,21 +213,21 @@ if __name__ == "__main__":
         sys.exit(0)
 
     elif mode == TS['code']:
-        fully_qualified_path_for_backup = get_new_fcn()
+        fully_qualified_path_for_backup = get_qualifier_with_ctx()
         pyperclip.copy(fully_qualified_path_for_backup)
         print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
         sys.exit(0)
 
     elif mode == HEAD['code']:
         head_diff = s_run_process_and_get_output('git show HEAD')
-        file_name = "%s.diff" % get_new_fcn()
+        file_name = "%s.diff" % get_qualifier_with_ctx()
         write_to_file(file_name, head_diff)
         pyperclip.copy("vi %s" % file_name)
         sys.exit(0)
 
     elif mode == DIFF['code']:
         git_diff = s_run_process_and_get_output('git diff')
-        file_name = "%s.diff" % get_new_fcn()
+        file_name = "%s.diff" % get_qualifier_with_ctx()
         write_to_file(file_name, git_diff)
         pyperclip.copy("vi %s" % file_name)
         sys.exit(0)
