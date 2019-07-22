@@ -98,10 +98,11 @@ LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
 TS = get_cmd('ts', 'get time stamp for backup location')
 HEAD = get_cmd('head', 'save last commit diff & get open link')
-DIFF = get_cmd('diff', 'save get diff & get open link')
+DIFF = get_cmd('diff', 'save git diff & get open link')
+GP = get_cmd('gp', 'git copy modified and new file to clipboard, or specified file.')
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, DIFF
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, DIFF, GP
 ]
 
 def get_ts():
@@ -158,8 +159,8 @@ if __name__ == "__main__":
         print("usage: 1 :: \t\t %s [-n]" % GS['code'])
         print("usage: 2 :: \t\t %s [space-seperated-files] [-n]" % FILES['code'])
         print("usage: 3 :: \t\t %s [-n]" % LAST_COMMIT['code'])
-        print("usage: 3 :: \t\t %s" % UPDATE_BRANCH['code'])
-        print("usage: 3 :: \t\t %s" % TS['code'])
+        print("usage: 4 :: \t\t %s" % UPDATE_BRANCH['code'])
+        print("usage: 5 :: \t\t %s" % TS['code'])
         sys.exit(1)
 
     add_scp = True
@@ -230,6 +231,24 @@ if __name__ == "__main__":
         file_name = "%s.diff" % get_qualifier_with_ctx()
         write_to_file(file_name, git_diff)
         pyperclip.copy("vi %s" % file_name)
+        sys.exit(0)
+
+    elif mode == GP['code']:
+        process_output = s_run_process_and_get_output('git status -s')
+        files = [x[3:] for x in process_output.split("\n") if len(x.strip()) > 0]
+        param = get_param(2)
+        text = None
+        if param is None:
+            text = " ".join(files)
+        else:
+            index = int(param)
+            if index >= len(files) or index < 0:
+                print("Invalid index")
+                for i in range(len(files)):
+                    print("%s :: %s" % (i, files[i]))
+            text = files[index]
+
+        pyperclip.copy(text)
         sys.exit(0)
 
     else:
