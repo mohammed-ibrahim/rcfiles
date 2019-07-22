@@ -60,6 +60,7 @@ noremap Y Vy
 noremap \ :e ~/index<Return>/
 noremap c C<Esc>
 noremap <F10> :%s/\s\+$//e<Return>
+noremap <F5> <C-w>gf
 
 inoremap <C-o> <C-x><C-n>
 inoremap <F1> <Esc>:w<Return>
