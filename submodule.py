@@ -77,12 +77,19 @@ def get_build_and_deploy_statements(proj_dir, deploy_suffix):
     return (cmd, cmd2)
 
 update_branch_template = """
+
 JENKINS :: origin/topic/%s/%s
+REMOTE BRANCH :: %s
+
 git branch --set-upstream-to=origin/master %s
+
 git commit --amend
 git commit --amend --no-edit
+
 git pull
 git rebase
+
+
 a sci &&
 git push origin :topic/%s/%s &&
 git push origin HEAD:topic/%s/%s
@@ -105,10 +112,11 @@ LHEAD = get_cmd('lhead', 'list files modified/added in last commit')
 DIFF = get_cmd('diff', 'save git diff & get open link')
 GP = get_cmd('gp', 'git copy modified and new file to clipboard, or specified file.')
 STORE_COMMIT_ID = get_cmd('sci', 'record commit link to db')
+CFG = get_cmd('cfg', 'show local config for current branch/story')
 
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG
 ]
 
 def get_ts():
@@ -139,9 +147,6 @@ def read_file_contents(file_path):
     return contents
 
 def load_or_create_config(file_path):
-    print("--------------------------------------------------------------")
-    print(file_path)
-    print("--------------------------------------------------------------")
 
     parsed = {}
 
@@ -150,6 +155,10 @@ def load_or_create_config(file_path):
         parsed = json.loads(contents)
 
     return parsed
+
+def get_repo_url():
+    process_output = s_run_process_and_get_output('git config remote.origin.url')
+    return 'https://' + process_output.split("@")[1].replace(":", "/")[:-5]
 
 def get_param(index):
     if len(sys.argv) > index:
@@ -244,8 +253,9 @@ if __name__ == "__main__":
 
         current_user_details = s_run_process_and_get_output("whoami")
         current_user = current_user_details.split(NEW_LINE)[0]
+        required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
 
-        cmd = update_branch_template % (current_user, current_branch, current_branch, current_user, current_branch, current_user, current_branch)
+        cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
         print(cmd)
         sys.exit(0)
 
@@ -298,9 +308,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     elif mode == STORE_COMMIT_ID['code']:
-        process_output = s_run_process_and_get_output('git config remote.origin.url')
         last_commit_id = s_run_process_and_get_output('git rev-parse HEAD').strip()
-        required_url = 'https://' + process_output.split("@")[1].replace(":", "/")[:-5] + '/commit/' + last_commit_id
+        required_url = get_repo_url() + '/commit/' + last_commit_id
         file_name = get_cwd_name() + "-" + get_current_branch()
         file_path = os.path.join(local_file_db_dir, file_name)
         print("%s %s" % (file_name, file_path))
@@ -309,10 +318,24 @@ if __name__ == "__main__":
         if 'commit_links' not in content:
             content['commit_links'] = []
 
-        content['commit_links'].append(required_url)
+        content['commit_links'].append({
+                "url": required_url,
+                "time": get_ts()
+            })
         write_to_file(file_path, json.dumps(content, indent=4))
         sys.exit(0)
 
+    elif mode == CFG['code']:
+
+        file_name = get_cwd_name() + "-" + get_current_branch()
+        file_path = os.path.join(local_file_db_dir, file_name)
+        if os.path.isfile(file_path):
+            contents = read_file_contents(file_path)
+            print("\n\n%s\n\n" % contents)
+        else:
+            print("\n\nCONFIG NOT FOUND\n\n")
+
+        sys.exit(0)
     else:
         print("Invalid mode : %s" % mode)
         sys.exit(1)
