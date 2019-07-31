@@ -212,14 +212,12 @@ if __name__ == "__main__":
         print("SCP_DEPLOY_LOCATION is not set")
         sys.exit(1)
 
-    print("Deploy suffix: %s" % deploy_suffix)
 
     local_file_db_dir = os.environ.get('LOCAL_FILE_DB_DIR', None)
     if local_file_db_dir is None:
         print("LOCAL_FILE_DB_DIR is not set")
         sys.exit(1)
 
-    print("Local file db directory: %s" % local_file_db_dir)
 
     files = []
 
