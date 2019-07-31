@@ -1,4 +1,5 @@
 import subprocess
+import json
 import os
 import sys
 import datetime
@@ -76,11 +77,13 @@ def get_build_and_deploy_statements(proj_dir, deploy_suffix):
     return (cmd, cmd2)
 
 update_branch_template = """
+JENKINS :: origin/topic/%s/%s
 git branch --set-upstream-to=origin/master %s
 git commit --amend
 git commit --amend --no-edit
 git pull
 git rebase
+a sci &&
 git push origin :topic/%s/%s &&
 git push origin HEAD:topic/%s/%s
 """
@@ -98,15 +101,23 @@ LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
 TS = get_cmd('ts', 'get time stamp for backup location')
 HEAD = get_cmd('head', 'save last commit diff & get open link')
+LHEAD = get_cmd('lhead', 'list files modified/added in last commit')
 DIFF = get_cmd('diff', 'save git diff & get open link')
 GP = get_cmd('gp', 'git copy modified and new file to clipboard, or specified file.')
+STORE_COMMIT_ID = get_cmd('sci', 'record commit link to db')
+
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, DIFF, GP
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID
 ]
 
 def get_ts():
     return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
+
+def get_current_branch():
+    branch_details = s_run_process_and_get_output("git branch")
+    current_branch = [x for x in branch_details.split(NEW_LINE) if "*" in x][0]
+    return current_branch[2:]
 
 def get_cwd_name():
     cwd = os.getcwd()
@@ -119,6 +130,26 @@ def write_to_file(file_name, content):
         file_pointer.write(content)
 
     print("File write complete: " + file_name)
+
+def read_file_contents(file_path):
+    contents = None
+    with open(file_path, "r") as file_pointer:
+        contents = file_pointer.read()
+
+    return contents
+
+def load_or_create_config(file_path):
+    print("--------------------------------------------------------------")
+    print(file_path)
+    print("--------------------------------------------------------------")
+
+    parsed = {}
+
+    if os.path.isfile(file_path):
+        contents = read_file_contents(file_path)
+        parsed = json.loads(contents)
+
+    return parsed
 
 def get_param(index):
     if len(sys.argv) > index:
@@ -173,6 +204,14 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print("Deploy suffix: %s" % deploy_suffix)
+
+    local_file_db_dir = os.environ.get('LOCAL_FILE_DB_DIR', None)
+    if local_file_db_dir is None:
+        print("LOCAL_FILE_DB_DIR is not set")
+        sys.exit(1)
+
+    print("Local file db directory: %s" % local_file_db_dir)
+
     files = []
 
     if mode == GS['code']:
@@ -201,15 +240,12 @@ if __name__ == "__main__":
                 files.append(file_c)
 
     elif mode == UPDATE_BRANCH['code']:
-        branch_details = s_run_process_and_get_output("git branch")
-        current_branch = [x for x in branch_details.split(NEW_LINE) if "*" in x][0]
-        current_branch = current_branch[2:]
+        current_branch = get_current_branch()
 
         current_user_details = s_run_process_and_get_output("whoami")
         current_user = current_user_details.split(NEW_LINE)[0]
 
-
-        cmd = update_branch_template % (current_branch, current_user, current_branch, current_user, current_branch)
+        cmd = update_branch_template % (current_user, current_branch, current_branch, current_user, current_branch, current_user, current_branch)
         print(cmd)
         sys.exit(0)
 
@@ -224,6 +260,16 @@ if __name__ == "__main__":
         file_name = "%s.diff" % get_qualifier_with_ctx()
         write_to_file(file_name, head_diff)
         pyperclip.copy("vi %s" % file_name)
+        sys.exit(0)
+
+    elif mode == LHEAD['code']:
+        lhead_diff = s_run_process_and_get_output('git diff-tree --no-commit-id --name-only -r HEAD')
+        all_lines = [line for line in lhead_diff.split("\n") if len(line) > 0]
+        print("\n\n%s\n\n" % (" ".join(all_lines)))
+        print("::\n\n")
+        for line in all_lines:
+            print(line)
+        print("\n\n::\n\n")
         sys.exit(0)
 
     elif mode == DIFF['code']:
@@ -249,6 +295,22 @@ if __name__ == "__main__":
             text = files[index]
 
         pyperclip.copy(text)
+        sys.exit(0)
+
+    elif mode == STORE_COMMIT_ID['code']:
+        process_output = s_run_process_and_get_output('git config remote.origin.url')
+        last_commit_id = s_run_process_and_get_output('git rev-parse HEAD').strip()
+        required_url = 'https://' + process_output.split("@")[1].replace(":", "/")[:-5] + '/commit/' + last_commit_id
+        file_name = get_cwd_name() + "-" + get_current_branch()
+        file_path = os.path.join(local_file_db_dir, file_name)
+        print("%s %s" % (file_name, file_path))
+        content = load_or_create_config(file_path)
+
+        if 'commit_links' not in content:
+            content['commit_links'] = []
+
+        content['commit_links'].append(required_url)
+        write_to_file(file_path, json.dumps(content, indent=4))
         sys.exit(0)
 
     else:
