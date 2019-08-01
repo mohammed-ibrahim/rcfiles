@@ -177,47 +177,37 @@ def get_qualifier_with_ctx():
     else:
         ctx = slugify(ctx)
 
-    local_directory = os.environ.get('LOCAL_BACKUP_DIR', None)
-    if local_directory is None:
-        print("LOCAL_BACKUP_DIR is not set")
+    local_directory = pull_env_var('LOCAL_BACKUP_DIR')
+    return os.path.join(local_directory, "%s-%s" % (ctx, get_ts()))
+
+def display_primary_operations():
+    primary_operation_codes = [x['code'] for x in PRIMARY_OPERATIONS]
+    print("usage: :: a [%s]" % (",".join(primary_operation_codes)))
+    for cmd in PRIMARY_OPERATIONS:
+        print("\t\t %s \t\t[%s]" % (cmd['code'], cmd['desc']))
+
+def pull_env_var(key):
+    env_value = os.environ.get(key, None)
+    if env_value is None:
+        print("%s environment variable is not set" % key)
         sys.exit(1)
 
-    return os.path.join(local_directory, "%s-%s" % (ctx, get_ts()))
+    return env_value
 
 if __name__ == "__main__":
 
     primary_operation_codes = [x['code'] for x in PRIMARY_OPERATIONS]
-    if len(sys.argv) < 2:
-        print("usage: :: build [%s]" % (",".join(primary_operation_codes)))
-        for cmd in PRIMARY_OPERATIONS:
-            print("\t\t %s \t\t[%s]" % (cmd['code'], cmd['desc']))
-        sys.exit(1)
-
-    mode = sys.argv[1]
-
-    if mode not in primary_operation_codes:
-        print("usage: 1 :: \t\t %s [-n]" % GS['code'])
-        print("usage: 2 :: \t\t %s [space-seperated-files] [-n]" % FILES['code'])
-        print("usage: 3 :: \t\t %s [-n]" % LAST_COMMIT['code'])
-        print("usage: 4 :: \t\t %s" % UPDATE_BRANCH['code'])
-        print("usage: 5 :: \t\t %s" % TS['code'])
+    mode = sys.argv[1] if (len(sys.argv) > 1) else None
+    if mode is None or mode not in primary_operation_codes:
+        display_primary_operations()
         sys.exit(1)
 
     add_scp = True
     if "-n" in sys.argv:
         add_scp = False
 
-    deploy_suffix = os.environ.get('SCP_DEPLOY_LOCATION', None)
-    if deploy_suffix is None:
-        print("SCP_DEPLOY_LOCATION is not set")
-        sys.exit(1)
-
-
-    local_file_db_dir = os.environ.get('LOCAL_FILE_DB_DIR', None)
-    if local_file_db_dir is None:
-        print("LOCAL_FILE_DB_DIR is not set")
-        sys.exit(1)
-
+    deploy_suffix = pull_env_var('SCP_DEPLOY_LOCATION')
+    local_file_db_dir = pull_env_var('LOCAL_FILE_DB_DIR')
 
     files = []
 
