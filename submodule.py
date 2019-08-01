@@ -6,6 +6,7 @@ import datetime
 import time
 import pyperclip
 import re
+import requests
 
 
 def run_interactive(exe):
@@ -25,7 +26,7 @@ def run_process_and_get_output(command_list, exit_on_failure=False):
     out, err = p.communicate()
 
     if exit_on_failure and len(err) > 0:
-        sys.exit(1)
+        err_exit()
 
     return out
 
@@ -113,10 +114,11 @@ DIFF = get_cmd('diff', 'save git diff & get open link')
 GP = get_cmd('gp', 'git copy modified and new file to clipboard, or specified file.')
 STORE_COMMIT_ID = get_cmd('sci', 'record commit link to db')
 CFG = get_cmd('cfg', 'show local config for current branch/story')
+URL = get_cmd('url', 'Save url to local file and copy file link.')
 
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL
 ]
 
 def get_ts():
@@ -168,7 +170,12 @@ def get_param(index):
 
 def slugify(text):
     output = re.sub(r'\W+', '-', text)
-    return output
+    return output.lower()
+
+def get_qualifier_with_custom_ctx(ctx, extension):
+    ctx = slugify(ctx)
+    local_directory = pull_env_var('LOCAL_BACKUP_DIR')
+    return os.path.join(local_directory, "%s-%s.%s" % (ctx, get_ts(), extension))
 
 def get_qualifier_with_ctx():
     ctx = get_param(2)
@@ -190,17 +197,23 @@ def pull_env_var(key):
     env_value = os.environ.get(key, None)
     if env_value is None:
         print("%s environment variable is not set" % key)
-        sys.exit(1)
+        err_exit()
 
     return env_value
+
+def err_exit():
+    sys.exit(1)
+
+def exit_app():
+    sys.exit(0)
 
 if __name__ == "__main__":
 
     primary_operation_codes = [x['code'] for x in PRIMARY_OPERATIONS]
-    mode = sys.argv[1] if (len(sys.argv) > 1) else None
+    mode = get_param(1)
     if mode is None or mode not in primary_operation_codes:
         display_primary_operations()
-        sys.exit(1)
+        err_exit()
 
     add_scp = True
     if "-n" in sys.argv:
@@ -220,7 +233,7 @@ if __name__ == "__main__":
 
         if len(sys.argv) < 3:
             print("Insufficient files")
-            sys.exit(1)
+            err_exit()
 
         for i in range(2, len(sys.argv)):
             files.append(sys.argv[i])
@@ -245,20 +258,20 @@ if __name__ == "__main__":
 
         cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
         print(cmd)
-        sys.exit(0)
+        exit_app()
 
     elif mode == TS['code']:
         fully_qualified_path_for_backup = get_qualifier_with_ctx()
         pyperclip.copy(fully_qualified_path_for_backup)
         print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
-        sys.exit(0)
+        exit_app()
 
     elif mode == HEAD['code']:
         head_diff = s_run_process_and_get_output('git show HEAD')
         file_name = "%s.diff" % get_qualifier_with_ctx()
         write_to_file(file_name, head_diff)
         pyperclip.copy("vi %s" % file_name)
-        sys.exit(0)
+        exit_app()
 
     elif mode == LHEAD['code']:
         lhead_diff = s_run_process_and_get_output('git diff-tree --no-commit-id --name-only -r HEAD')
@@ -268,14 +281,14 @@ if __name__ == "__main__":
         for line in all_lines:
             print(line)
         print("\n\n::\n\n")
-        sys.exit(0)
+        exit_app()
 
     elif mode == DIFF['code']:
         git_diff = s_run_process_and_get_output('git diff')
         file_name = "%s.diff" % get_qualifier_with_ctx()
         write_to_file(file_name, git_diff)
         pyperclip.copy("vi %s" % file_name)
-        sys.exit(0)
+        exit_app()
 
     elif mode == GP['code']:
         process_output = s_run_process_and_get_output('git status -s')
@@ -293,7 +306,7 @@ if __name__ == "__main__":
             text = files[index]
 
         pyperclip.copy(text)
-        sys.exit(0)
+        exit_app()
 
     elif mode == STORE_COMMIT_ID['code']:
         last_commit_id = s_run_process_and_get_output('git rev-parse HEAD').strip()
@@ -311,7 +324,7 @@ if __name__ == "__main__":
                 "time": get_ts()
             })
         write_to_file(file_path, json.dumps(content, indent=4))
-        sys.exit(0)
+        exit_app()
 
     elif mode == CFG['code']:
 
@@ -323,10 +336,24 @@ if __name__ == "__main__":
         else:
             print("\n\nCONFIG NOT FOUND\n\n")
 
-        sys.exit(0)
+        exit_app()
+
+    elif mode == URL['code']:
+        url = get_param(2)
+        if url is None:
+            print("usage: a %s <url>" % (URL['code']))
+            err_exit()
+            err_exit()
+
+        file_name = get_qualifier_with_custom_ctx("url-save", "json")
+        req = requests.get(url)
+        write_to_file(file_name, req.content)
+        pyperclip.copy("vi %s" % file_name)
+        exit_app()
+
     else:
         print("Invalid mode : %s" % mode)
-        sys.exit(1)
+        err_exit()
 
     for f in files:
         print(f)
@@ -335,7 +362,7 @@ if __name__ == "__main__":
 
     if len(dist_files) == 0:
         print("changes doesn't have any deployable code modifications")
-        sys.exit(1)
+        err_exit()
 
     cwd = os.getcwd()
     cmd_list = []
