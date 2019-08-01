@@ -234,6 +234,32 @@ def execute_curl_command():
     write_to_file(file_name, req.content)
     pyperclip.copy("vi %s" % file_name)
 
+def show_mvn_build_cmd(files, add_scp):
+    for f in files:
+        print(f)
+
+    dist_files = get_distinct_submodule_locations(files)
+
+    if len(dist_files) == 0:
+        print("changes doesn't have any deployable code modifications")
+        err_exit()
+
+    cwd = os.getcwd()
+    cmd_list = []
+    for cur_dir in dist_files:
+        full_path = os.path.join(cwd, cur_dir)
+        c1, c2 = get_build_and_deploy_statements(full_path, deploy_suffix)
+
+        cmd_list.append("cd %s" % full_path)
+        cmd_list.append(c1)
+        if add_scp:
+            cmd_list.append(c2)
+
+    cmd_list.append("cd %s" % cwd)
+    print("\n\n---------------------------------------------------------------------\n\n")
+    print(" && \n".join(cmd_list))
+    print("\n\n---------------------------------------------------------------------\n\n")
+    os.chdir(cwd)
 
 def err_exit():
     sys.exit(1)
@@ -256,12 +282,12 @@ if __name__ == "__main__":
     deploy_suffix = pull_env_var('SCP_DEPLOY_LOCATION')
     local_file_db_dir = pull_env_var('LOCAL_FILE_DB_DIR')
 
-    files = []
-
     if mode == GS['code']:
 
         process_output = s_run_process_and_get_output("git status")
         files = get_modified_files_from_git_status(process_output)
+        show_mvn_build_cmd(files, add_scp)
+        exit_app()
 
     elif mode == FILES['code']:
 
@@ -269,8 +295,12 @@ if __name__ == "__main__":
             print("Insufficient files")
             err_exit()
 
+        files = []
         for i in range(2, len(sys.argv)):
             files.append(sys.argv[i])
+
+        show_mvn_build_cmd(files, add_scp)
+        exit_app()
 
     elif mode == LAST_COMMIT['code']:
         last_commit_message = s_run_process_and_get_output("git log -1")
@@ -279,9 +309,13 @@ if __name__ == "__main__":
         last_commit_list_cmd = "git diff-tree --no-commit-id --name-only -r %s" % commit_id
         files_in_last_commit = s_run_process_and_get_output(last_commit_list_cmd)
 
+        files = []
         for file_c in files_in_last_commit.split("\n"):
             if len(file_c) > 0:
                 files.append(file_c)
+
+        show_mvn_build_cmd(files, add_scp)
+        exit_app()
 
     elif mode == UPDATE_BRANCH['code']:
         current_branch = get_current_branch()
@@ -394,30 +428,3 @@ if __name__ == "__main__":
     else:
         print("Invalid mode : %s" % mode)
         err_exit()
-
-    for f in files:
-        print(f)
-
-    dist_files = get_distinct_submodule_locations(files)
-
-    if len(dist_files) == 0:
-        print("changes doesn't have any deployable code modifications")
-        err_exit()
-
-    cwd = os.getcwd()
-    cmd_list = []
-    for cur_dir in dist_files:
-        full_path = os.path.join(cwd, cur_dir)
-        c1, c2 = get_build_and_deploy_statements(full_path, deploy_suffix)
-
-        cmd_list.append("cd %s" % full_path)
-        cmd_list.append(c1)
-        if add_scp:
-            cmd_list.append(c2)
-
-
-    cmd_list.append("cd %s" % cwd)
-    print("\n\n---------------------------------------------------------------------\n\n")
-    print(" && \n".join(cmd_list))
-    print("\n\n---------------------------------------------------------------------\n\n")
-    os.chdir(cwd)
