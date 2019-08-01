@@ -114,11 +114,12 @@ DIFF = get_cmd('diff', 'save git diff & get open link')
 GP = get_cmd('gp', 'git copy modified and new file to clipboard, or specified file.')
 STORE_COMMIT_ID = get_cmd('sci', 'record commit link to db')
 CFG = get_cmd('cfg', 'show local config for current branch/story')
-URL = get_cmd('url', 'Save url to local file and copy file link.')
+URL = get_cmd('url', 'Save url [GET] to local file and copy file link.')
+CURL = get_cmd('curl', 'Save Curl [GET] to local file and copy file link.')
 
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL, CURL
 ]
 
 def get_ts():
@@ -200,6 +201,39 @@ def pull_env_var(key):
         err_exit()
 
     return env_value
+
+def execute_curl_command():
+    args_len = len(sys.argv)
+    url = None
+    headers = {}
+    extension = "txt"
+
+    for i in range(2, args_len):
+        part = sys.argv[i]
+
+        if part.lower() == 'curl':
+            continue
+
+        if part == "-H":
+            next_part = sys.argv[i+1]
+            parts = next_part.split(": ")
+            headers[parts[0]] = parts[1]
+
+        if part.lower() == "-e":
+            extension = sys.argv[i+1]
+
+        if part.startswith("http"):
+            url = part
+
+    if url is None:
+        print("Invalid command")
+        err_exit()
+
+    file_name = get_qualifier_with_custom_ctx("curl-save", extension)
+    req = requests.get(url, headers = headers)
+    write_to_file(file_name, req.content)
+    pyperclip.copy("vi %s" % file_name)
+
 
 def err_exit():
     sys.exit(1)
@@ -345,10 +379,16 @@ if __name__ == "__main__":
             err_exit()
             err_exit()
 
-        file_name = get_qualifier_with_custom_ctx("url-save", "json")
+        file_name = get_qualifier_with_custom_ctx("url-save", "txt")
         req = requests.get(url)
         write_to_file(file_name, req.content)
         pyperclip.copy("vi %s" % file_name)
+        exit_app()
+
+    elif mode == CURL['code']:
+        #1 Parse url & headers
+        #2 make call
+        execute_curl_command()
         exit_app()
 
     else:
