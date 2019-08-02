@@ -318,7 +318,10 @@ if __name__ == "__main__":
         exit_app()
 
     elif mode == UPDATE_BRANCH['code']:
-        current_branch = get_current_branch()
+        current_branch = get_param(2)
+
+        if current_branch is None:
+            current_branch = get_current_branch()
 
         current_user_details = s_run_process_and_get_output("whoami")
         current_user = current_user_details.split(NEW_LINE)[0]
