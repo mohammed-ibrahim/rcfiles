@@ -107,6 +107,7 @@ GS = get_cmd('gs', 'get build command from git status')
 FILES = get_cmd('files', 'get build command from manually supplied comma seperated files')
 LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
+UPDATE_CURRENT_BRANCH = get_cmd('ubc', 'ubc [j|b|a|an]')
 TS = get_cmd('ts', 'get time stamp for backup location')
 HEAD = get_cmd('head', 'save last commit diff & get open link')
 LHEAD = get_cmd('lhead', 'list files modified/added in last commit')
@@ -120,7 +121,7 @@ AN = get_cmd('an', 'Annotate git status files')
 
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL, CURL, AN
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, UPDATE_CURRENT_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL, CURL, AN
 ]
 
 def get_ts():
@@ -235,6 +236,10 @@ def execute_curl_command():
     write_to_file(file_name, req.content)
     pyperclip.copy("vi %s" % file_name)
 
+def get_current_user():
+    current_user_details = s_run_process_and_get_output("whoami")
+    return current_user_details.split(NEW_LINE)[0]
+
 def show_mvn_build_cmd(files, add_scp):
     for f in files:
         print(f)
@@ -261,6 +266,10 @@ def show_mvn_build_cmd(files, add_scp):
     print(" && \n".join(cmd_list))
     print("\n\n---------------------------------------------------------------------\n\n")
     os.chdir(cwd)
+
+def print_and_copy(text):
+    print(text)
+    pyperclip.copy(text)
 
 def err_exit():
     sys.exit(1)
@@ -330,6 +339,28 @@ if __name__ == "__main__":
 
         cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
         print(cmd)
+        exit_app()
+
+    elif mode == UPDATE_CURRENT_BRANCH['code']:
+        cmd = get_param(2)
+
+        if cmd is None:
+            print("Need to pass command with ubc")
+            exit_app()
+
+        current_branch = get_current_branch()
+        current_user = get_current_user()
+
+        if cmd == "j":
+            text = "origin/topic/%s/%s" % (current_user, current_branch)
+            print_and_copy(text)
+
+        elif cmd == "b":
+            required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
+            print_and_copy(required_url)
+
+        else:
+            print("Command unknown : %s" % cmd)
         exit_app()
 
     elif mode == TS['code']:
