@@ -116,10 +116,11 @@ STORE_COMMIT_ID = get_cmd('sci', 'record commit link to db')
 CFG = get_cmd('cfg', 'show local config for current branch/story')
 URL = get_cmd('url', 'Save url [GET] to local file and copy file link.')
 CURL = get_cmd('curl', 'Save Curl [GET] to local file and copy file link.')
+AN = get_cmd('an', 'Annotate git status files')
 
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL, CURL
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL, CURL, AN
 ]
 
 def get_ts():
@@ -428,6 +429,36 @@ if __name__ == "__main__":
         execute_curl_command()
         exit_app()
 
+    elif mode == AN['code']:
+        modified_files = s_run_process_and_get_output("git ls-files -m").split("\n")
+        untracked_files = s_run_process_and_get_output("git ls-files -o").split("\n")
+
+        all_files = []
+
+        for file in modified_files:
+            if len(file) > 0:
+                all_files.append(file)
+
+        for file in untracked_files:
+            if len(file) > 0:
+                all_files.append(file)
+
+        selection = get_param(2)
+
+        if selection is None:
+            if len(all_files) > 0:
+                print("\n\n")
+                for index in range(len(all_files)):
+                    print("%d %s" % (index, all_files[index]))
+                print("\n\n")
+            else:
+                print("\n\nNo files found !!!\n\n")
+        elif selection.lower() == "all":
+            pyperclip.copy(" ".join(all_files))
+        else:
+            pyperclip.copy(all_files[int(selection)])
+
+        exit_app()
     else:
         print("Invalid mode : %s" % mode)
         err_exit()
