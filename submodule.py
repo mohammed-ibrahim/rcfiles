@@ -107,7 +107,7 @@ GS = get_cmd('gs', 'get build command from git status')
 FILES = get_cmd('files', 'get build command from manually supplied comma seperated files')
 LAST_COMMIT = get_cmd('lc', 'get build command from changes in last commit')
 UPDATE_BRANCH = get_cmd('ub', 'get update branch command list')
-UPDATE_CURRENT_BRANCH = get_cmd('ubc', 'ubc [j|b|a|an]')
+UPDATE_CURRENT_BRANCH = get_cmd('ubc', 'copy update branch quick commands :: ubc [jen|branch|merge|merge-no-edit]')
 TS = get_cmd('ts', 'get time stamp for backup location')
 HEAD = get_cmd('head', 'save last commit diff & get open link')
 LHEAD = get_cmd('lhead', 'list files modified/added in last commit')
@@ -118,10 +118,14 @@ CFG = get_cmd('cfg', 'show local config for current branch/story')
 URL = get_cmd('url', 'Save url [GET] to local file and copy file link.')
 CURL = get_cmd('curl', 'Save Curl [GET] to local file and copy file link.')
 AN = get_cmd('an', 'Annotate git status files')
+MSTAGING = get_cmd('merge-staging', 'Merge specified branch branch to dev/staging')
+MMASTER = get_cmd('merge-master', 'Merge specified branch branch to master')
 
 
 PRIMARY_OPERATIONS = [
-    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, UPDATE_CURRENT_BRANCH, TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL, CURL, AN
+    GS, FILES, LAST_COMMIT, UPDATE_BRANCH, UPDATE_CURRENT_BRANCH,
+    TS, HEAD, LHEAD, DIFF, GP, STORE_COMMIT_ID, CFG, URL, CURL, AN,
+    MSTAGING, MMASTER
 ]
 
 def get_ts():
@@ -277,6 +281,22 @@ def err_exit():
 def exit_app():
     sys.exit(0)
 
+merge_staging_template = """
+git checkout dev/staging
+git pull origin dev/staging
+git merge origin/topic/%s/%s --no-commit --no-ff
+git commit
+git push
+"""
+
+merge_master_template = """
+git checkout master
+git pull origin master
+git merge origin/topic/%s/%s --no-commit --no-ff
+git commit
+git push
+"""
+
 if __name__ == "__main__":
 
     primary_operation_codes = [x['code'] for x in PRIMARY_OPERATIONS]
@@ -351,11 +371,11 @@ if __name__ == "__main__":
         current_branch = get_current_branch()
         current_user = get_current_user()
 
-        if cmd == "j":
+        if cmd == "jen":
             text = "origin/topic/%s/%s" % (current_user, current_branch)
             print_and_copy(text)
 
-        elif cmd == "b":
+        elif cmd == "branch":
             required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
             print_and_copy(required_url)
 
@@ -490,6 +510,25 @@ if __name__ == "__main__":
             pyperclip.copy(all_files[int(selection)])
 
         exit_app()
+
+    elif mode == MSTAGING['code']:
+        branch = get_param(2)
+        if branch is None:
+            print("Need to send branch as parameter")
+            err_exit()
+
+        print(merge_staging_template % (get_current_user(), branch))
+        exit_app()
+
+    elif mode == MMASTER['code']:
+        branch = get_param(2)
+        if branch is None:
+            print("Need to send branch as parameter")
+            err_exit()
+
+        print(merge_master_template % (get_current_user(), branch))
+        exit_app()
+
     else:
         print("Invalid mode : %s" % mode)
         err_exit()
