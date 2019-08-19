@@ -194,11 +194,28 @@ def get_qualifier_with_ctx():
     local_directory = pull_env_var('LOCAL_BACKUP_DIR')
     return os.path.join(local_directory, "%s-%s" % (ctx, get_ts()))
 
+def get_display_alias_cmd(alias):
+    alias = alias[6:]
+    parts = alias.split("=")
+    return "\t\t" + parts[0] + "\t\t" + parts[1][1:-1]
+
 def display_primary_operations():
     primary_operation_codes = [x['code'] for x in PRIMARY_OPERATIONS]
     print("usage: :: a [%s]" % (",".join(primary_operation_codes)))
     for cmd in PRIMARY_OPERATIONS:
-        print("\t\t %s \t\t[%s]" % (cmd['code'], cmd['desc']))
+        print("\t\t%s \t\t[%s]" % (cmd['code'], cmd['desc']))
+
+    print("\t\t--------------------------------------------------------------------")
+    bash_contents = None
+    with open(os.path.join(os.environ.get("HOME"), ".bash_profile"), "r") as file_pointer:
+        bash_contents = file_pointer.read()
+
+    if bash_contents is not None:
+        lines = bash_contents.split("\n")
+        aliases = [a for a in lines if a.startswith("alias ")]
+        for alias in aliases:
+            print(get_display_alias_cmd(alias))
+
 
 def pull_env_var(key):
     env_value = os.environ.get(key, None)
@@ -399,11 +416,15 @@ if __name__ == "__main__":
     elif mode == LHEAD['code']:
         lhead_diff = s_run_process_and_get_output('git diff-tree --no-commit-id --name-only -r HEAD')
         all_lines = [line for line in lhead_diff.split("\n") if len(line) > 0]
-        print("\n\n%s\n\n" % (" ".join(all_lines)))
-        print("::\n\n")
-        for line in all_lines:
-            print(line)
-        print("\n\n::\n\n")
+        gc_param = get_param(2)
+
+        if gc_param == "-gc":
+            print("\n\n%s\n\n" % (" ".join(all_lines)))
+        else:
+            print("\n\n")
+            for line in all_lines:
+                print(line)
+            print("\n\n")
         exit_app()
 
     elif mode == DIFF['code']:
