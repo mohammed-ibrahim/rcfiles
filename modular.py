@@ -24,10 +24,10 @@ NEW_LINE = "\n"
 # /_______  /__/\_ \\___  >\___  >____/ |__| |__|\____/|___|  / \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #         \/      \/    \/     \/                           \/          \/     \/          \/            \/    \/
 
-def hello_world(arg0, arg1, arg2, arg3, arg4, arg5):
+def hello_world(params, arg1, arg2, arg3, arg4, arg5):
     print("the function is called")
 
-def gc(arg0, arg1, arg2, arg3, arg4, arg5):
+def gc(params, arg1, arg2, arg3, arg4, arg5):
     print("method gc is called")
 
 update_branch_template = """
@@ -49,7 +49,7 @@ git push origin :topic/%s/%s &&
 git push origin HEAD:topic/%s/%s
 """
 
-def update_branch(arg0, arg1, arg2, arg3, arg4, arg5):
+def update_branch(params, arg1, arg2, arg3, arg4, arg5):
     cmd = None
     current_branch = None
     open_branch_link = "open_branch_link"
@@ -70,18 +70,18 @@ def update_branch(arg0, arg1, arg2, arg3, arg4, arg5):
     if cmd is not None:
         if cmd == open_branch_link:
             webbrowser.open(required_url, new=0, autoraise=True)
-            exit_app()
+            return
 
     cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
     print(cmd)
 
-def head(arg0, arg1, arg2, arg3, arg4, arg5):
+def head(params, arg1, arg2, arg3, arg4, arg5):
     head_diff = s_run_process_and_get_output('git show HEAD')
     file_name = "%s.diff" % get_qualifier_with_ctx()
     write_to_file(file_name, head_diff)
     pyperclip.copy("vi %s" % file_name)
 
-def lhead(arg0, arg1, arg2, arg3, arg4, arg5):
+def lhead(params, arg1, arg2, arg3, arg4, arg5):
     lhead_diff = s_run_process_and_get_output('git diff-tree --no-commit-id --name-only -r HEAD')
     all_lines = [line for line in lhead_diff.split("\n") if len(line) > 0]
     gc_param = get_param(2)
@@ -94,7 +94,7 @@ def lhead(arg0, arg1, arg2, arg3, arg4, arg5):
             print(line)
         print("\n\n")
 
-def git_copy(arg0, arg1, arg2, arg3, arg4, arg5):
+def git_copy(params, arg1, arg2, arg3, arg4, arg5):
     process_output = s_run_process_and_get_output('git status -s')
     files = [x[3:] for x in process_output.split("\n") if len(x.strip()) > 0]
     param = get_param(2)
@@ -117,6 +117,8 @@ def git_copy(arg0, arg1, arg2, arg3, arg4, arg5):
 # |    |  /  |  | |  |  |_|  ||  |  \___  | /    Y    \  ___/|  | |   Y  (  <_> ) /_/ |\___ \
 # |______/   |__| |__|____/__||__|  / ____| \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #                                   \/              \/     \/          \/            \/    \/
+# --utility
+
 def get_qualifier_with_ctx():
     ctx = get_param(2)
     if ctx is None:
@@ -168,6 +170,9 @@ def run_process_and_get_output(command_list, exit_on_failure=False):
 
     return out
 
+def err_exit():
+    sys.exit(1)
+
 def s_run_process_and_get_output(s_cmd, exit_on_failure=False):
     return run_process_and_get_output(s_cmd.split(" "), exit_on_failure)
 
@@ -193,10 +198,10 @@ def get_cmd(code, desc, options, fnc):
         "fnc": fnc
     }
 
-def display_primary_operations():
-    primary_operation_codes = [x['code'] for x in PRIMARY_OPERATIONS]
+def display_primary_operations(primary_operations):
+    primary_operation_codes = [x['code'] for x in primary_operations]
     print("usage: :: a [%s]" % (",".join(primary_operation_codes)))
-    for cmd in PRIMARY_OPERATIONS:
+    for cmd in primary_operations:
         print("\t\t%s \t\t[%s]" % (cmd['code'], cmd['desc']))
 
 def get_param(index):
@@ -205,14 +210,13 @@ def get_param(index):
 
     return None
 
-PRIMARY_OPERATIONS = [
-    get_cmd("ag", "test command", "ic,oc,dc", hello_world),
-    get_cmd("gc", "test command", "ic,oc,dc", gc),
-    get_cmd("ub", "Update Branch Commands.", "-ob", update_branch),
-    get_cmd("head", "Save head commit patch to backup.", "-ob", head),
-    get_cmd("lhead", "List file in head commit.", "-ob", lhead),
-    get_cmd("gp", "Git status copy", "-ob", git_copy)
-]
+def get_params():
+    cmd_list = []
+    for i in range(2, len(sys.argv)):
+        cmd = sys.argv[i]
+        cmd_list.append(cmd)
+    return cmd_list
+
 
 # __________                                             ___________ __
 # \______   \_______  ____   ________________    _____   \_   _____//  |_  ___________ ___.__.
@@ -220,15 +224,26 @@ PRIMARY_OPERATIONS = [
 #  |    |     |  | \(  <_> ) /_/  >  | \// __ \|  Y Y  \  |        \|  | |   |  \  | \/\___  |
 #  |____|     |__|   \____/\___  /|__|  (____  /__|_|  / /_______  /|__| |___|  /__|   / ____|
 #                         /_____/            \/      \/          \/           \/       \/
+# --main
 
 if __name__ == "__main__":
-    primary_operation_codes = [x['code'] for x in PRIMARY_OPERATIONS]
+
+    primary_operations = [
+        get_cmd("ag", "test command", "ic,oc,dc", hello_world),
+        get_cmd("gc", "test command", "ic,oc,dc", gc),
+        get_cmd("ub", "Update Branch Commands.", "-ob", update_branch),
+        get_cmd("head", "Save head commit patch to backup.", "-ob", head),
+        get_cmd("lhead", "List file in head commit.", "-ob", lhead),
+        get_cmd("gp", "Git status copy", "-ob", git_copy)
+    ]
+
+    primary_operation_codes = [x['code'] for x in primary_operations]
     mode = get_param(1)
     if mode is None or mode not in primary_operation_codes:
-        display_primary_operations()
+        display_primary_operations(primary_operations)
         err_exit()
 
     index = primary_operation_codes.index(mode)
-    arg = PRIMARY_OPERATIONS[index]
+    arg = primary_operations[index]
     fn = arg['fnc']
-    fn(None, None, None, None, None, None)
+    fn(get_params(), None, None, None, None, None)
