@@ -7,7 +7,7 @@ import time
 import pyperclip
 import re
 import requests
-
+import webbrowser
 
 def run_interactive(exe):
     p = subprocess.Popen(exe, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -205,16 +205,16 @@ def display_primary_operations():
     for cmd in PRIMARY_OPERATIONS:
         print("\t\t%s \t\t[%s]" % (cmd['code'], cmd['desc']))
 
-    print("\t\t--------------------------------------------------------------------")
-    bash_contents = None
-    with open(os.path.join(os.environ.get("HOME"), ".bash_profile"), "r") as file_pointer:
-        bash_contents = file_pointer.read()
-
-    if bash_contents is not None:
-        lines = bash_contents.split("\n")
-        aliases = [a for a in lines if a.startswith("alias ")]
-        for alias in aliases:
-            print(get_display_alias_cmd(alias))
+    # print("\t\t--------------------------------------------------------------------")
+    # bash_contents = None
+    # with open(os.path.join(os.environ.get("HOME"), ".bash_profile"), "r") as file_pointer:
+    #     bash_contents = file_pointer.read()
+    #
+    # if bash_contents is not None:
+    #     lines = bash_contents.split("\n")
+    #     aliases = [a for a in lines if a.startswith("alias ")]
+    #     for alias in aliases:
+    #         print(get_display_alias_cmd(alias))
 
 
 def pull_env_var(key):
@@ -287,6 +287,15 @@ def show_mvn_build_cmd(files, add_scp):
     print(" && \n".join(cmd_list))
     print("\n\n---------------------------------------------------------------------\n\n")
     os.chdir(cwd)
+
+def get_non_cmd_params():
+    non_cmd_list = []
+    for i in range(2, len(sys.argv)):
+        cmd = sys.argv[i]
+        if not cmd.startswith("-"):
+            non_cmd_list.append(cmd)
+
+    return non_cmd_list
 
 def print_and_copy(text):
     print(text)
@@ -365,7 +374,15 @@ if __name__ == "__main__":
         exit_app()
 
     elif mode == UPDATE_BRANCH['code']:
-        current_branch = get_param(2)
+        cmd = None
+        current_branch = None
+        open_branch_link = "open_branch_link"
+        if "-ob" in sys.argv:
+            cmd = open_branch_link
+
+        non_cmd_list = get_non_cmd_params()
+        if len(non_cmd_list) > 0:
+            current_branch = non_cmd_list[0]
 
         if current_branch is None:
             current_branch = get_current_branch()
@@ -373,6 +390,11 @@ if __name__ == "__main__":
         current_user_details = s_run_process_and_get_output("whoami")
         current_user = current_user_details.split(NEW_LINE)[0]
         required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
+
+        if cmd is not None:
+            if cmd == open_branch_link:
+                webbrowser.open(required_url, new=0, autoraise=True)
+                exit_app()
 
         cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
         print(cmd)
