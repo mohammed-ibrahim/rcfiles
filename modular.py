@@ -104,7 +104,7 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6):
     current_user_details = s_run_process_and_get_output("whoami")
     current_user = current_user_details.split(NEW_LINE)[0]
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
-    webbrowser.open(required_url, new=0, autoraise=True)
+    open_url_in_browser(url)
 
 def merge_staging(params, arg2, arg3, arg4, arg5, arg6):
     merge_staging_template = """
@@ -188,6 +188,19 @@ def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6):
     pyperclip.copy(fully_qualified_path_for_backup)
     print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
 
+def open_saved_link(params, arg2, arg3, arg4, arg5, arg6):
+    url_map = {
+        "pct": "https://jenkins-hzn.eng.vmware.com/jenkins/view/Pre-Commit/job/horizon-workspace-pre-commit-unit-and-server-tests-ALL/build?delay=0sec",
+        "stg": "https://jenkins-hzn.eng.vmware.com/jenkins/job/saas-pipeline-staging/",
+        "preprod": "https://jenkins-hzn.eng.vmware.com/jenkins/job/saas-pipeline-preprod/"
+    }
+    url_id = arg2
+    if url_id is None:
+        print("url id is required")
+        return
+
+    open_url_in_browser(url_map[url_id])
+
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
 # |    |   /\   __\  |  | |  \   __<   |  |  /  \ /  \_/ __ \   __\  |  \ /  _ \ / __ |/  ___/
@@ -195,6 +208,9 @@ def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6):
 # |______/   |__| |__|____/__||__|  / ____| \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #                                   \/              \/     \/          \/            \/    \/
 # --utility
+
+def open_url_in_browser(url):
+    webbrowser.open(url, new=0, autoraise=True)
 
 def get_qualifier_with_ctx():
     ctx = get_param(2)
@@ -321,7 +337,8 @@ if __name__ == "__main__":
         get_cmd("url", "Merge into master", "non", save_url),
         get_cmd("curl", "Merge into master", "non", save_curl),
         get_cmd("diff", "Save git diff", "non", save_diff),
-        get_cmd("ts", "Get backup time stamp", "non", get_time_stamp)
+        get_cmd("ts", "Get backup time stamp", "non", get_time_stamp),
+        get_cmd("l", "Open link", "non", open_saved_link)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
