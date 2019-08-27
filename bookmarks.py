@@ -29,21 +29,28 @@ if __name__ == "__main__":
     bookmark_contents = read_file_contents(bookmarks_file)
     lines = bookmark_contents.split(NEW_LINE)
     lines = [line for line in lines if len(line.strip()) > 0]
-    url_map = {}
+
+    index_list = []
+    command_list = []
 
     for line in lines:
         parts = line.split(" ")
         if len(parts) == 2:
-            url_map[parts[0]] = parts[1]
+            bmk_key = parts[0]
+            bmk_link = parts[1]
+            index_list.append(bmk_key)
+            command_list.append([bmk_key, bmk_link])
         else:
             print("Invalid url: %s" % line)
 
     url_id = get_param(1)
 
-    if url_id is None or url_id not in url_map:
-        for key in url_map:
-            print("\t%s - %s..." % (key.ljust(25), url_map[key][:50]))
-
+    if url_id is None or url_id not in index_list:
+        for bmk in command_list:
+            bmk_key = bmk[0]
+            bmk_link = bmk[1]
+            print("\t%s - %s..." % (bmk_key.ljust(25), bmk_link[:50]))
         err_exit()
 
-    open_url_in_browser(url_map[url_id])
+    index = index_list.index(url_id)
+    open_url_in_browser(command_list[index][1])
