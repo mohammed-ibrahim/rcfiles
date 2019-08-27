@@ -188,19 +188,6 @@ def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6):
     pyperclip.copy(fully_qualified_path_for_backup)
     print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
 
-def open_saved_link(params, arg2, arg3, arg4, arg5, arg6):
-    url_map = {
-        "pct": "https://jenkins-hzn.eng.vmware.com/jenkins/view/Pre-Commit/job/horizon-workspace-pre-commit-unit-and-server-tests-ALL/build?delay=0sec",
-        "stg": "https://jenkins-hzn.eng.vmware.com/jenkins/job/saas-pipeline-staging/",
-        "preprod": "https://jenkins-hzn.eng.vmware.com/jenkins/job/saas-pipeline-preprod/"
-    }
-    url_id = arg2
-    if url_id is None:
-        print("url id is required")
-        return
-
-    open_url_in_browser(url_map[url_id])
-
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
 # |    |   /\   __\  |  | |  \   __<   |  |  /  \ /  \_/ __ \   __\  |  \ /  _ \ / __ |/  ___/
@@ -337,8 +324,7 @@ if __name__ == "__main__":
         get_cmd("url", "Merge into master", "non", save_url),
         get_cmd("curl", "Merge into master", "non", save_curl),
         get_cmd("diff", "Save git diff", "non", save_diff),
-        get_cmd("ts", "Get backup time stamp", "non", get_time_stamp),
-        get_cmd("l", "Open link", "non", open_saved_link)
+        get_cmd("ts", "Get backup time stamp", "non", get_time_stamp)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
