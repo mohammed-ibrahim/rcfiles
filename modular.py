@@ -44,18 +44,13 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6):
     git push origin :topic/%s/%s &&
     git push origin HEAD:topic/%s/%s
     """
-    current_branch = arg1
+    current_branch = arg2
     if current_branch is None:
         current_branch = get_current_branch()
 
     current_user_details = s_run_process_and_get_output("whoami")
     current_user = current_user_details.split(NEW_LINE)[0]
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
-
-    if cmd is not None:
-        if cmd == open_branch_link:
-            webbrowser.open(required_url, new=0, autoraise=True)
-            return
 
     cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
     print(cmd)
@@ -104,7 +99,7 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6):
     current_user_details = s_run_process_and_get_output("whoami")
     current_user = current_user_details.split(NEW_LINE)[0]
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
-    open_url_in_browser(url)
+    open_url_in_browser(required_url)
 
 def merge_staging(params, arg2, arg3, arg4, arg5, arg6):
     merge_staging_template = """

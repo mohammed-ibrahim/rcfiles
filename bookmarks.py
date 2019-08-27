@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     if url_id is None or url_id not in url_map:
         for key in url_map:
-            print("\t%s\t\t%s" % (key, url_map[key]))
+            print("\t%s - %s..." % (key.ljust(25), url_map[key][:50]))
 
         err_exit()
 
