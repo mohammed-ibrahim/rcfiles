@@ -25,26 +25,26 @@ IGNORE_OPEN_EDITOR = "--ignore-open-editor"
 # /_______  /__/\_ \\___  >\___  >____/ |__| |__|\____/|___|  / \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #         \/      \/    \/     \/                           \/          \/     \/          \/            \/    \/
 
+update_branch_template = """
 
+JENKINS :: origin/topic/%s/%s
+REMOTE BRANCH :: %s
+
+git branch --set-upstream-to=origin/master %s
+
+git commit --amend
+git commit --amend --no-edit
+
+git pull
+git rebase
+
+
+a sci &&
+git push origin :topic/%s/%s &&
+git push origin HEAD:topic/%s/%s
+"""
 def update_branch(params, arg2, arg3, arg4, arg5, arg6):
-    update_branch_template = """
 
-    JENKINS :: origin/topic/%s/%s
-    REMOTE BRANCH :: %s
-
-    git branch --set-upstream-to=origin/master %s
-
-    git commit --amend
-    git commit --amend --no-edit
-
-    git pull
-    git rebase
-
-
-    a sci &&
-    git push origin :topic/%s/%s &&
-    git push origin HEAD:topic/%s/%s
-    """
     current_branch = arg2
     if current_branch is None:
         current_branch = get_current_branch()

@@ -2,8 +2,11 @@ import webbrowser
 import sys
 import os
 
-def open_url_in_browser(url):
-    webbrowser.open(url, new=0, autoraise=True)
+def open_url_in_browser(url, params):
+    if "-f" in params:
+        webbrowser.get('firefox').open_new_tab(url)
+    else:
+        webbrowser.open(url, new=0, autoraise=True)
 
 def get_param(index):
     if len(sys.argv) > index:
@@ -22,6 +25,13 @@ def read_file_contents(file_path):
     return contents
 
 NEW_LINE = "\n"
+
+def get_params():
+    cmd_list = []
+    for i in range(2, len(sys.argv)):
+        cmd = sys.argv[i]
+        cmd_list.append(cmd)
+    return cmd_list
 
 if __name__ == "__main__":
 
@@ -53,4 +63,4 @@ if __name__ == "__main__":
         err_exit()
 
     index = index_list.index(url_id)
-    open_url_in_browser(command_list[index][1])
+    open_url_in_browser(command_list[index][1], get_params())
