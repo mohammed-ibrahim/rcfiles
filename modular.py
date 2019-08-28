@@ -16,6 +16,7 @@ import webbrowser
 #  \______  /\____/|___|  /____  > |__| (____  /___|  /__| /____  >
 #         \/            \/     \/            \/     \/          \/
 NEW_LINE = "\n"
+IGNORE_OPEN_EDITOR = "--ignore-open-editor"
 
 # ___________                            __  .__                   _____          __  .__               .___
 # \_   _____/__  ___ ____   ____  __ ___/  |_|__| ____   ____     /     \   _____/  |_|  |__   ____   __| _/______
@@ -60,6 +61,8 @@ def head(params, arg2, arg3, arg4, arg5, arg6):
     file_name = "%s.diff" % get_qualifier_with_ctx()
     write_to_file(file_name, head_diff)
     pyperclip.copy("vi %s" % file_name)
+    if IGNORE_OPEN_EDITOR not in params:
+        open_file_in_editor(file_name)
 
 def lhead(params, arg2, arg3, arg4, arg5, arg6):
     lhead_diff = s_run_process_and_get_output('git diff-tree --no-commit-id --name-only -r HEAD')
@@ -74,8 +77,15 @@ def lhead(params, arg2, arg3, arg4, arg5, arg6):
             print(line)
         print("\n\n")
 
+    file_name = "%s.diff" % get_qualifier_with_ctx()
+    write_to_file(file_name, NEW_LINE.join(all_lines))
+    open_file_in_editor(file_name)
+
 def git_copy(params, arg2, arg3, arg4, arg5, arg6):
-    process_output = s_run_process_and_get_output('git status -s')
+    process_output = s_run_process_and_get_output('git status')
+    complete_clean_tree_text = "nothing to commit, working tree clean"
+    only_untracked_files_text = "nothing added to commit but untracked files present"
+    changes_to_be_committed = "Changes to be committed:"
     files = [x[3:] for x in process_output.split("\n") if len(x.strip()) > 0]
     param = arg2
     text = None
@@ -141,6 +151,7 @@ def save_url(params, arg2, arg3, arg4, arg5, arg6):
     req = requests.get(url)
     write_to_file(file_name, req.content)
     pyperclip.copy("vi %s" % file_name)
+    open_file_in_editor_if_specified(params, file_name)
 
 def save_curl(params, arg2, arg3, arg4, arg5, arg6):
     url = None
@@ -171,17 +182,27 @@ def save_curl(params, arg2, arg3, arg4, arg5, arg6):
     req = requests.get(url, headers = headers)
     write_to_file(file_name, req.content)
     pyperclip.copy("vi %s" % file_name)
+    open_file_in_editor_if_specified(params, file_name)
 
 def save_diff(params, arg2, arg3, arg4, arg5, arg6):
     git_diff = s_run_process_and_get_output('git diff')
     file_name = "%s.diff" % get_qualifier_with_ctx()
     write_to_file(file_name, git_diff)
     pyperclip.copy("vi %s" % file_name)
+    open_file_in_editor(file_name)
 
 def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6):
     fully_qualified_path_for_backup = get_qualifier_with_ctx()
     pyperclip.copy(fully_qualified_path_for_backup)
     print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
+
+def save_git_status(params, arg2, arg3, arg4, arg5, arg6):
+    git_diff = s_run_process_and_get_output('git status')
+    file_name = "%s.diff" % get_qualifier_with_ctx()
+    write_to_file(file_name, git_diff)
+    pyperclip.copy("vi %s" % file_name)
+    open_file_in_editor(file_name)
+
 
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
@@ -194,13 +215,21 @@ def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6):
 def open_url_in_browser(url):
     webbrowser.open(url, new=0, autoraise=True)
 
-def get_qualifier_with_ctx():
-    ctx = get_param(2)
-    if ctx is None:
-        ctx = get_cwd_name()
-    else:
-        ctx = slugify(ctx)
+def open_file_in_editor_if_specified(params, file_name):
+    if "--atom" in params:
+        open_file_in_editor(file_name)
 
+def open_file_in_editor(file_name):
+    s_run_process_and_get_output("atom %s" % file_name)
+
+def get_qualifier_with_ctx():
+    # ctx = get_param(2)
+    # if ctx is None:
+    #     ctx = get_cwd_name()
+    # else:
+    #     ctx = slugify(ctx)
+
+    ctx = get_cwd_name()
     local_directory = pull_env_var('LOCAL_BACKUP_DIR')
     return os.path.join(local_directory, "%s-%s" % (ctx, get_ts()))
 
@@ -309,17 +338,18 @@ def get_params():
 if __name__ == "__main__":
 
     primary_operations = [
-        get_cmd("ub", "Update Branch Commands.", "non", update_branch),
-        get_cmd("head", "Save head commit patch to backup.", "non", head),
-        get_cmd("lhead", "List file in head commit.", "non", lhead),
-        get_cmd("gp", "Git status copy", "-ob", git_copy),
-        get_cmd("ob", "Open Branch", "non", open_branch),
-        get_cmd("ms", "Merge into staging", "non", merge_staging),
-        get_cmd("mm", "Merge into master", "non", merge_master),
-        get_cmd("url", "Merge into master", "non", save_url),
-        get_cmd("curl", "Merge into master", "non", save_curl),
-        get_cmd("diff", "Save git diff", "non", save_diff),
-        get_cmd("ts", "Get backup time stamp", "non", get_time_stamp)
+        get_cmd("ub",       "Update Branch Commands.",              "non", update_branch),
+        get_cmd("head",     "Save head commit patch to backup.",    "non", head),
+        get_cmd("lhead",    "List file in head commit.",            "non", lhead),
+        # get_cmd("gp",     "Git status copy",                      "non", git_copy),
+        get_cmd("ob",       "Open Branch",                          "non", open_branch),
+        get_cmd("ms",       "Merge into staging",                   "non", merge_staging),
+        get_cmd("mm",       "Merge into master",                    "non", merge_master),
+        get_cmd("url",      "Merge into master",                    "non", save_url),
+        get_cmd("curl",     "Merge into master",                    "non", save_curl),
+        get_cmd("diff",     "Save git diff",                        "non", save_diff),
+        get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp),
+        get_cmd("gs",       "Save git status to file",              "non", save_git_status)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
