@@ -27,6 +27,15 @@ IGNORE_OPEN_EDITOR = "--ignore-open-editor"
 
 update_branch_template = """
 
+Submit New
+rbt post -g -o
+
+Update
+rbt post -u
+
+Smart Update
+rbt post -u -o -r <review-id>
+
 JENKINS :: origin/topic/%s/%s
 REMOTE BRANCH :: %s
 
