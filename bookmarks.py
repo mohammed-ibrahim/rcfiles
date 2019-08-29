@@ -2,6 +2,8 @@ import webbrowser
 import sys
 import os
 import re
+from pytrie import StringTrie
+
 
 def open_url_in_browser(url, params):
     if "-f" in params:
@@ -60,33 +62,48 @@ def reform_file(bookmarks_file, lines):
     write_to_file(bookmarks_file, NEW_LINE.join(reformed_lines))
 
 def build_ds(lines):
-    index_list = []
-    command_list = []
+    primary_keys = {}
+    links = []
     tag_map = {}
 
-    for line in lines:
+    for i in range(len(lines)):
+        line = lines[i]
         parts = clean_string(line).split(" ")
         if len(parts) == 3:
-            bmk_key = parts[0]
-            bmk_tags = parts[1]
-            bmk_link = parts[2]
-            index_list.append(bmk_key)
-            command_list.append([bmk_key, bmk_tags, bmk_link])
+            primary_key = parts[0]
+            link = parts[2]
+            primary_keys[primary_key] = [i]
+            links.append(link)
 
-            tags = bmk_tags.split(",")
+            tags = parts[1]
+            tags = tags.split(",")
             for tag in tags:
                 if tag not in tag_map:
                     tag_map[tag] = []
 
-                tag_map[tag].append(bmk_link)
+                tag_map[tag].append(i)
         else:
             print("Invalid url: %s" % line)
 
     return {
-        "index_list": index_list,
-        "command_list": command_list,
+        "primary_keys": primary_keys,
+        "links": links,
         "tag_map": tag_map
     }
+
+def build_trie_and_execute(map_to_search, prefix_term):
+    trie = StringTrie()
+    for key in map_to_search:
+        trie[key] = key
+
+    prefix_matches = trie.values(url_id)
+    if len(prefix_matches) > 0:
+        first_match = prefix_matches[0]
+        index = map_to_search[first_match][0]
+        open_url_in_browser(links[index], get_params())
+        return True
+
+    return False
 
 if __name__ == "__main__":
 
@@ -103,18 +120,14 @@ if __name__ == "__main__":
         sys.exit(0)
 
     response = build_ds(lines)
-    index_list = response['index_list']
-    command_list = response['command_list']
+    primary_keys = response['primary_keys']
+    links = response['links']
     tag_map = response['tag_map']
 
     url_id = get_param(1)
-
     if url_id is None:
-        for bmk in command_list:
-            bmk_key = bmk[0]
-            bmk_tags = bmk[1]
-            bmk_link = bmk[2]
-            print("\t%s %s - %s..." % (bmk_key.ljust(25), bmk_tags.ljust(25), bmk_link[:50]))
+        for line in lines:
+            print("\t\t%s..." % line[:100])
         err_exit()
 
     # 1. direct search primary key
@@ -122,14 +135,23 @@ if __name__ == "__main__":
     # 3. prefix primary key
     # 4. prefix search tag
 
-    if url_id in index_list:
-        index = index_list.index(url_id)
-        open_url_in_browser(command_list[index][2], get_params())
+    if url_id in primary_keys:
+        index = primary_keys[url_id][0]
+        open_url_in_browser(links[index], get_params())
         exit()
 
     if url_id in tag_map:
         first_link_of_tag = tag_map[url_id][0]
-        open_url_in_browser(first_link_of_tag, get_params())
+        open_url_in_browser(links[first_link_of_tag], get_params())
         exit()
 
-    print("not found")
+
+    prefix_found_for_primary_keys = build_trie_and_execute(primary_keys, url_id)
+    if prefix_found_for_primary_keys:
+        exit()
+
+    prefix_found_for_tags = build_trie_and_execute(tag_map, url_id)
+    if prefix_found_for_tags:
+        exit()
+
+    print("No suggestions for: %s" % url_id)
