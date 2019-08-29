@@ -8,6 +8,7 @@ import pyperclip
 import re
 import requests
 import webbrowser
+import uuid
 
 # _________                         __                 __
 # \_   ___ \  ____   ____   _______/  |______    _____/  |_  ______
@@ -48,7 +49,7 @@ git pull
 git rebase
 
 
-a sci &&
+a shead &&
 git push origin :topic/%s/%s &&
 git push origin HEAD:topic/%s/%s
 """
@@ -122,14 +123,15 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6):
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
     open_url_in_browser(required_url)
 
+merge_staging_template = """
+git checkout dev/staging
+git pull origin dev/staging
+git merge origin/topic/%s/%s --no-commit --no-ff
+git commit
+git push
+"""
 def merge_staging(params, arg2, arg3, arg4, arg5, arg6):
-    merge_staging_template = """
-    git checkout dev/staging
-    git pull origin dev/staging
-    git merge origin/topic/%s/%s --no-commit --no-ff
-    git commit
-    git push
-    """
+
     branch = arg2
     if branch is None:
         print("Need to send branch as parameter")
@@ -214,6 +216,10 @@ def save_git_status(params, arg2, arg3, arg4, arg5, arg6):
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor(file_name)
 
+def gen_uuid(params, arg2, arg3, arg4, arg5, arg6):
+    ustr = str(uuid.uuid4())
+    print("\n%s - copied to clipboard.\n" % ustr)
+    pyperclip.copy(ustr)
 
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
@@ -222,6 +228,10 @@ def save_git_status(params, arg2, arg3, arg4, arg5, arg6):
 # |______/   |__| |__|____/__||__|  / ____| \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #                                   \/              \/     \/          \/            \/    \/
 # --utility
+
+def get_current_user():
+    current_user_details = s_run_process_and_get_output("whoami")
+    return current_user_details.split(NEW_LINE)[0]
 
 def open_url_in_browser(url):
     webbrowser.open(url, new=0, autoraise=True)
@@ -363,7 +373,8 @@ if __name__ == "__main__":
         get_cmd("curl",     "Merge into master",                    "non", save_curl),
         get_cmd("diff",     "Save git diff",                        "non", save_diff),
         get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp),
-        get_cmd("gs",       "Save git status to file",              "non", save_git_status)
+        get_cmd("gs",       "Save git status to file",              "non", save_git_status),
+        get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
