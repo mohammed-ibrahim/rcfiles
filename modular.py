@@ -221,6 +221,12 @@ def gen_uuid(params, arg2, arg3, arg4, arg5, arg6):
     print("\n%s - copied to clipboard.\n" % ustr)
     pyperclip.copy(ustr)
 
+def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6):
+    contents = read_stdin()
+    file_name = "%s.cmd.out.txt" % get_qualifier_with_ctx()
+    write_to_file(file_name, contents)
+    open_file_in_editor(file_name)
+
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
 # |    |   /\   __\  |  | |  \   __<   |  |  /  \ /  \_/ __ \   __\  |  \ /  _ \ / __ |/  ___/
@@ -228,6 +234,13 @@ def gen_uuid(params, arg2, arg3, arg4, arg5, arg6):
 # |______/   |__| |__|____/__||__|  / ____| \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #                                   \/              \/     \/          \/            \/    \/
 # --utility
+
+def read_stdin():
+    try:
+        return sys.stdin.read()
+    except Exception as e:
+        print e.args
+        return None
 
 def get_current_user():
     current_user_details = s_run_process_and_get_output("whoami")
@@ -374,7 +387,8 @@ if __name__ == "__main__":
         get_cmd("diff",     "Save git diff",                        "non", save_diff),
         get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp),
         get_cmd("gs",       "Save git status to file",              "non", save_git_status),
-        get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid)
+        get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid),
+        get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
