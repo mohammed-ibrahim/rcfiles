@@ -66,12 +66,14 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6):
     print(cmd)
 
 def head(params, arg2, arg3, arg4, arg5, arg6):
+    file_name = shead(params, arg2, arg3, arg4, arg5, arg6)
+    open_file_in_editor(file_name)
+
+def shead(params, arg2, arg3, arg4, arg5, arg6):
     head_diff = s_run_process_and_get_output('git show HEAD')
-    file_name = "%s.diff" % get_qualifier_with_ctx()
+    file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, head_diff)
-    pyperclip.copy("vi %s" % file_name)
-    if IGNORE_OPEN_EDITOR not in params:
-        open_file_in_editor(file_name)
+    return file_name
 
 def lhead(params, arg2, arg3, arg4, arg5, arg6):
     lhead_diff = s_run_process_and_get_output('git diff-tree --no-commit-id --name-only -r HEAD')
@@ -253,6 +255,9 @@ def write_to_file(file_name, content):
 
     print("File write complete: " + file_name)
 
+def get_head_commit_id():
+    return s_run_process_and_get_output('git rev-parse HEAD').replace(NEW_LINE, "").strip()
+
 def get_ts():
     return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
 
@@ -348,9 +353,9 @@ if __name__ == "__main__":
 
     primary_operations = [
         get_cmd("ub",       "Update Branch Commands.",              "non", update_branch),
-        get_cmd("head",     "Save head commit patch to backup.",    "non", head),
+        get_cmd("head",     "Save head commit & Open in editor.",   "non", head),
+        get_cmd("shead",    "Save head commit patch to backup.",    "non", shead),
         get_cmd("lhead",    "List file in head commit.",            "non", lhead),
-        # get_cmd("gp",     "Git status copy",                      "non", git_copy),
         get_cmd("ob",       "Open Branch",                          "non", open_branch),
         get_cmd("ms",       "Merge into staging",                   "non", merge_staging),
         get_cmd("mm",       "Merge into master",                    "non", merge_master),
