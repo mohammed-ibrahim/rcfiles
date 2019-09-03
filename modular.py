@@ -61,6 +61,13 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6):
 
     current_user_details = s_run_process_and_get_output("whoami")
     current_user = current_user_details.split(NEW_LINE)[0]
+
+    if "-j" in params:
+        jenkin_cmd = "origin/topic/%s/%s" % (current_user, get_current_branch())
+        print("Copied: %s" % jenkin_cmd)
+        pyperclip.copy(jenkin_cmd)
+        return
+
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
 
     cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
@@ -367,7 +374,7 @@ def get_params():
 if __name__ == "__main__":
 
     primary_operations = [
-        get_cmd("ub",       "Update Branch Commands.",              "non", update_branch),
+        get_cmd("ub",       "Update Branch Commands.",              "-j", update_branch),
         get_cmd("head",     "Save head commit & Open in editor.",   "non", head),
         get_cmd("shead",    "Save head commit patch to backup.",    "non", shead),
         get_cmd("lhead",    "List file in head commit.",            "non", lhead),
