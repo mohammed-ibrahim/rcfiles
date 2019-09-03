@@ -91,27 +91,19 @@ def lhead(params, arg2, arg3, arg4, arg5, arg6):
 
     file_name = "%s.diff" % get_qualifier_with_ctx()
     write_to_file(file_name, NEW_LINE.join(all_lines))
-    open_file_in_editor(file_name)
+    # open_file_in_editor(file_name)
+    open_file_in_editor_if_specified(params, file_name)
 
 def git_copy(params, arg2, arg3, arg4, arg5, arg6):
     process_output = s_run_process_and_get_output('git status')
-    complete_clean_tree_text = "nothing to commit, working tree clean"
-    only_untracked_files_text = "nothing added to commit but untracked files present"
-    changes_to_be_committed = "Changes to be committed:"
-    files = [x[3:] for x in process_output.split("\n") if len(x.strip()) > 0]
-    param = arg2
-    text = None
-    if param is None:
-        text = " ".join(files)
-    else:
-        index = int(param)
-        if index >= len(files) or index < 0:
-            print("Invalid index")
-            for i in range(len(files)):
-                print("%s :: %s" % (i, files[i]))
-        text = files[index]
-
-    pyperclip.copy(text)
+    lines = process_output.split(NEW_LINE)
+    tabbed_lines = [line[1:] for line in lines if line.startswith("\t")]
+    filtered_lines = [line for line in tabbed_lines if len(line.strip()) > 0]
+    modified = "modified:   "
+    if "-m" in params:
+        filtered_lines = [line for line in filtered_lines if modified in line]
+    filtered_lines = [line.replace(modified, "") for line in filtered_lines]
+    pyperclip.copy(" ".join(filtered_lines))
 
 def open_branch(params, arg2, arg3, arg4, arg5, arg6):
     current_branch = arg2
@@ -254,7 +246,7 @@ def open_file_in_editor_if_specified(params, file_name):
         open_file_in_editor(file_name)
 
 def open_file_in_editor(file_name):
-    s_run_process_and_get_output("atom %s" % file_name)
+    s_run_process_and_get_output("/usr/local/bin/atom %s" % file_name)
 
 def get_qualifier_with_ctx():
     # ctx = get_param(2)
@@ -382,13 +374,14 @@ if __name__ == "__main__":
         get_cmd("ob",       "Open Branch",                          "non", open_branch),
         get_cmd("ms",       "Merge into staging",                   "non", merge_staging),
         get_cmd("mm",       "Merge into master",                    "non", merge_master),
-        get_cmd("url",      "Merge into master",                    "non", save_url),
-        get_cmd("curl",     "Merge into master",                    "non", save_curl),
+        get_cmd("url",      "Save url output to file",              "non", save_url),
+        get_cmd("curl",     "Save curl output to file",             "non", save_curl),
         get_cmd("diff",     "Save git diff",                        "non", save_diff),
         get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp),
         get_cmd("gs",       "Save git status to file",              "non", save_git_status),
         get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid),
-        get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open)
+        get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open),
+        get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
