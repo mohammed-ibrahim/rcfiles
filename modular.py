@@ -71,7 +71,8 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6):
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
 
     cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
-    print(cmd)
+    # print(cmd)
+    save_contents_to_base_trackpad(cmd, True)
 
 def head(params, arg2, arg3, arg4, arg5, arg6):
     file_name = shead(params, arg2, arg3, arg4, arg5, arg6)
@@ -136,22 +137,25 @@ def merge_staging(params, arg2, arg3, arg4, arg5, arg6):
         print("Need to send branch as parameter")
         err_exit()
 
-    print(merge_staging_template % (get_current_user(), branch))
+    cmd = merge_staging_template % (get_current_user(), branch)
+    save_contents_to_base_trackpad(cmd, True)
 
+merge_master_template = """
+git checkout master
+git pull origin master
+git merge origin/topic/%s/%s --no-commit --no-ff
+git commit
+git push
+"""
 def merge_master(params, arg2, arg3, arg4, arg5, arg6):
-    merge_master_template = """
-    git checkout master
-    git pull origin master
-    git merge origin/topic/%s/%s --no-commit --no-ff
-    git commit
-    git push
-    """
+
     branch = arg2
     if branch is None:
         print("Need to send branch as parameter")
         err_exit()
 
-    print(merge_master_template % (get_current_user(), branch))
+    cmd = merge_master_template % (get_current_user(), branch)
+    save_contents_to_base_trackpad(cmd, True)
 
 def save_url(params, arg2, arg3, arg4, arg5, arg6):
     url = arg2
@@ -233,6 +237,16 @@ def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6):
 # |______/   |__| |__|____/__||__|  / ____| \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #                                   \/              \/     \/          \/            \/    \/
 # --utility
+
+def get_temp_note_file_name():
+    return os.path.join(os.environ.get("HOME"), "TempNote.txt")
+
+def save_contents_to_base_trackpad(contents, open_in_editor):
+    temp_note_file = get_temp_note_file_name()
+    write_to_file(temp_note_file, contents)
+
+    if open_in_editor:
+        open_file_in_editor(temp_note_file)
 
 def read_stdin():
     try:
