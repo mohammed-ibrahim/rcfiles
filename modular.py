@@ -71,8 +71,9 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6):
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
 
     cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
-    # print(cmd)
-    save_contents_to_base_trackpad(cmd, True)
+    file_name = "%s.txt" % (get_qualifier_with_ctx())
+    write_to_file(file_name, cmd)
+    open_file_in_editor(file_name)
 
 def head(params, arg2, arg3, arg4, arg5, arg6):
     file_name = shead(params, arg2, arg3, arg4, arg5, arg6)
@@ -138,7 +139,9 @@ def merge_staging(params, arg2, arg3, arg4, arg5, arg6):
         err_exit()
 
     cmd = merge_staging_template % (get_current_user(), branch)
-    save_contents_to_base_trackpad(cmd, True)
+    file_name = "%s.txt" % (get_qualifier_with_ctx())
+    write_to_file(file_name, cmd)
+    open_file_in_editor(file_name)
 
 merge_master_template = """
 git checkout master
@@ -155,7 +158,9 @@ def merge_master(params, arg2, arg3, arg4, arg5, arg6):
         err_exit()
 
     cmd = merge_master_template % (get_current_user(), branch)
-    save_contents_to_base_trackpad(cmd, True)
+    file_name = "%s.txt" % (get_qualifier_with_ctx())
+    write_to_file(file_name, cmd)
+    open_file_in_editor(file_name)
 
 def save_url(params, arg2, arg3, arg4, arg5, arg6):
     url = arg2
@@ -230,6 +235,37 @@ def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6):
     write_to_file(file_name, contents)
     open_file_in_editor(file_name)
 
+def reduce_filenames(params, arg2, arg3, arg4, arg5, arg6):
+    contents = read_stdin()
+    lines = contents.split(NEW_LINE)
+    filtered = [line.split("/") for line in lines if "/" in line]
+    filtered = [parts[-1] for parts in filtered]
+
+    if len(filtered) > 0:
+        for file in filtered:
+            print(file)
+    else:
+        print("No filenames in buffer")
+
+def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6):
+    branch_to_use = arg2
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
+
+    if branch_to_use is None or branch_to_use.strip() == "":
+        print("Couldn't determine branch")
+        return
+
+    local_directory = pull_env_var('LOCAL_BACKUP_DIR')
+    repo_name = get_repo_url().split("/")[-1]
+    ticket_name = "%s.%s.txt" % (slugify_c(repo_name), slugify_c(branch_to_use))
+    file_identifier = os.path.join(local_directory, ticket_name)
+
+    if not os.path.isfile(file_identifier):
+        write_to_file(file_identifier, "New Ticket")
+
+    open_file_in_editor(file_identifier)
+
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
 # |    |   /\   __\  |  | |  \   __<   |  |  /  \ /  \_/ __ \   __\  |  \ /  _ \ / __ |/  ___/
@@ -238,15 +274,15 @@ def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6):
 #                                   \/              \/     \/          \/            \/    \/
 # --utility
 
-def get_temp_note_file_name():
-    return os.path.join(os.environ.get("HOME"), "TempNote.txt")
-
-def save_contents_to_base_trackpad(contents, open_in_editor):
-    temp_note_file = get_temp_note_file_name()
-    write_to_file(temp_note_file, contents)
-
-    if open_in_editor:
-        open_file_in_editor(temp_note_file)
+# def get_temp_note_file_name():
+#     return os.path.join(os.environ.get("HOME"), "TempNote.txt")
+#
+# def save_contents_to_base_trackpad(contents, open_in_editor):
+#     temp_note_file = get_temp_note_file_name()
+#     write_to_file(temp_note_file, contents)
+#
+#     if open_in_editor:
+#         open_file_in_editor(temp_note_file)
 
 def read_stdin():
     try:
@@ -298,8 +334,13 @@ def get_ts():
     return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
 
 def slugify(text):
+    # output = re.sub(r'\W+', '-', text)
+    # return output.lower()
+    return slugify_c(text).lower()
+
+def slugify_c(text):
     output = re.sub(r'\W+', '-', text)
-    return output.lower()
+    return output
 
 def pull_env_var(key):
     env_value = os.environ.get(key, None)
@@ -402,7 +443,9 @@ if __name__ == "__main__":
         get_cmd("gs",       "Save git status to file",              "non", save_git_status),
         get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid),
         get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open),
-        get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy)
+        get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy),
+        get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames),
+        get_cmd("o",        "Open branch specifiec file",           "branch_name" , open_branch_ticket)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
