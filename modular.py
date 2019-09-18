@@ -53,7 +53,7 @@ a shead &&
 git push origin :topic/%s/%s &&
 git push origin HEAD:topic/%s/%s
 """
-def update_branch(params, arg2, arg3, arg4, arg5, arg6):
+def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     current_branch = arg2
     if current_branch is None:
@@ -75,17 +75,17 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6):
     write_to_file(file_name, cmd)
     open_file_in_editor(file_name)
 
-def head(params, arg2, arg3, arg4, arg5, arg6):
-    file_name = shead(params, arg2, arg3, arg4, arg5, arg6)
+def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    file_name = shead(params, arg2, arg3, arg4, arg5, arg6, env_variables)
     open_file_in_editor(file_name)
 
-def shead(params, arg2, arg3, arg4, arg5, arg6):
+def shead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
     file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, head_diff)
     return file_name
 
-def lhead(params, arg2, arg3, arg4, arg5, arg6):
+def lhead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     lhead_diff = s_run_process_and_get_output('git diff-tree --no-commit-id --name-only -r HEAD')
     all_lines = [line for line in lhead_diff.split("\n") if len(line) > 0]
     gc_param = arg2
@@ -103,7 +103,7 @@ def lhead(params, arg2, arg3, arg4, arg5, arg6):
     # open_file_in_editor(file_name)
     open_file_in_editor_if_specified(params, file_name)
 
-def git_copy(params, arg2, arg3, arg4, arg5, arg6):
+def git_copy(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     process_output = s_run_process_and_get_output('git status')
     lines = process_output.split(NEW_LINE)
     tabbed_lines = [line[1:] for line in lines if line.startswith("\t")]
@@ -114,7 +114,7 @@ def git_copy(params, arg2, arg3, arg4, arg5, arg6):
     filtered_lines = [line.replace(modified, "") for line in filtered_lines]
     pyperclip.copy(" ".join(filtered_lines))
 
-def open_branch(params, arg2, arg3, arg4, arg5, arg6):
+def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     current_branch = arg2
     if current_branch is None:
         current_branch = get_current_branch()
@@ -131,7 +131,7 @@ git merge origin/topic/%s/%s --no-commit --no-ff
 git commit
 git push
 """
-def merge_staging(params, arg2, arg3, arg4, arg5, arg6):
+def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     branch = arg2
     if branch is None:
@@ -150,7 +150,7 @@ git merge origin/topic/%s/%s --no-commit --no-ff
 git commit
 git push
 """
-def merge_master(params, arg2, arg3, arg4, arg5, arg6):
+def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     branch = arg2
     if branch is None:
@@ -162,7 +162,7 @@ def merge_master(params, arg2, arg3, arg4, arg5, arg6):
     write_to_file(file_name, cmd)
     open_file_in_editor(file_name)
 
-def save_url(params, arg2, arg3, arg4, arg5, arg6):
+def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = arg2
     if url is None:
         print("usage: a %s <url>" % (URL['code']))
@@ -174,7 +174,7 @@ def save_url(params, arg2, arg3, arg4, arg5, arg6):
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor_if_specified(params, file_name)
 
-def save_curl(params, arg2, arg3, arg4, arg5, arg6):
+def save_curl(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = None
     headers = {}
     extension = "txt"
@@ -205,37 +205,62 @@ def save_curl(params, arg2, arg3, arg4, arg5, arg6):
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor_if_specified(params, file_name)
 
-def save_diff(params, arg2, arg3, arg4, arg5, arg6):
+
+NEXT_FILE = """
+
+
+
+----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+
+
+
+
+"""
+
+def save_diff(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     git_diff = s_run_process_and_get_output('git diff')
     file_name = "%s.diff" % get_qualifier_with_ctx()
-    write_to_file(file_name, git_diff)
+
+    lines = git_diff.split(NEW_LINE)
+    buffer = []
+
+    for line in lines:
+        if line.startswith("diff --git"):
+            buffer.append(NEXT_FILE)
+
+        buffer.append(line)
+
+    write_to_file(file_name, NEW_LINE.join(buffer))
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor(file_name)
 
-def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6):
+def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     fully_qualified_path_for_backup = get_qualifier_with_ctx()
     pyperclip.copy(fully_qualified_path_for_backup)
     print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
 
-def save_git_status(params, arg2, arg3, arg4, arg5, arg6):
+def save_git_status(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     git_diff = s_run_process_and_get_output('git status')
     file_name = "%s.diff" % get_qualifier_with_ctx()
     write_to_file(file_name, git_diff)
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor(file_name)
 
-def gen_uuid(params, arg2, arg3, arg4, arg5, arg6):
+def gen_uuid(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     ustr = str(uuid.uuid4())
     print("\n%s - copied to clipboard.\n" % ustr)
     pyperclip.copy(ustr)
 
-def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6):
+def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     contents = read_stdin()
     file_name = "%s.cmd.out.txt" % get_qualifier_with_ctx()
     write_to_file(file_name, contents)
     open_file_in_editor(file_name)
 
-def reduce_filenames(params, arg2, arg3, arg4, arg5, arg6):
+def reduce_filenames(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     contents = read_stdin()
     lines = contents.split(NEW_LINE)
     filtered = [line.split("/") for line in lines if "/" in line]
@@ -247,7 +272,7 @@ def reduce_filenames(params, arg2, arg3, arg4, arg5, arg6):
     else:
         print("No filenames in buffer")
 
-def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6):
+def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
     if branch_to_use is None:
         branch_to_use = get_current_branch()
@@ -256,7 +281,7 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6):
         print("Couldn't determine branch")
         return
 
-    local_directory = pull_env_var('LOCAL_BACKUP_DIR')
+    local_directory = env_variables['TICKETS_DIR']
     repo_name = get_repo_url().split("/")[-1]
     ticket_name = "%s.%s.txt" % (slugify_c(repo_name), slugify_c(branch_to_use))
     file_identifier = os.path.join(local_directory, ticket_name)
@@ -313,12 +338,12 @@ def get_qualifier_with_ctx():
     #     ctx = slugify(ctx)
 
     ctx = get_cwd_name()
-    local_directory = pull_env_var('LOCAL_BACKUP_DIR')
+    local_directory = env_variables['LOCAL_BACKUP_DIR']
     return os.path.join(local_directory, "%s-%s" % (ctx, get_ts()))
 
 def get_qualifier_with_custom_ctx(ctx, extension):
     ctx = slugify(ctx)
-    local_directory = pull_env_var('LOCAL_BACKUP_DIR')
+    local_directory = env_variables['LOCAL_BACKUP_DIR']
     return os.path.join(local_directory, "%s-%s.%s" % (ctx, get_ts(), extension))
 
 def write_to_file(file_name, content):
@@ -428,6 +453,11 @@ def get_params():
 
 if __name__ == "__main__":
 
+    env_variables = {
+        'LOCAL_BACKUP_DIR': pull_env_var('LOCAL_BACKUP_DIR'),
+        'TICKETS_DIR': pull_env_var('TICKETS_DIR')
+    }
+
     primary_operations = [
         get_cmd("ub",       "Update Branch Commands.",              "-j", update_branch),
         get_cmd("head",     "Save head commit & Open in editor.",   "non", head),
@@ -457,4 +487,4 @@ if __name__ == "__main__":
     index = primary_operation_codes.index(mode)
     arg = primary_operations[index]
     fn = arg['fnc']
-    fn(get_params(), get_param(2), get_param(3), None, None, None)
+    fn(get_params(), get_param(2), get_param(3), None, None, None, env_variables)
