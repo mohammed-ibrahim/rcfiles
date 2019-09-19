@@ -18,6 +18,7 @@ import uuid
 #         \/            \/     \/            \/     \/          \/
 NEW_LINE = "\n"
 IGNORE_OPEN_EDITOR = "--ignore-open-editor"
+HR = "----------------------------------------------------------------------------------------------------------"
 
 # ___________                            __  .__                   _____          __  .__               .___
 # \_   _____/__  ___ ____   ____  __ ___/  |_|__| ____   ____     /     \   _____/  |_|  |__   ____   __| _/______
@@ -76,13 +77,15 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     open_file_in_editor(file_name)
 
 def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    file_name = shead(params, arg2, arg3, arg4, arg5, arg6, env_variables)
+    head_diff = s_run_process_and_get_output('git show HEAD')
+    file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(), get_head_commit_id(), slugify(get_current_branch()))
+    write_to_file(file_name, process_diff_file(head_diff))
     open_file_in_editor(file_name)
 
 def shead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
     file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(), get_head_commit_id(), slugify(get_current_branch()))
-    write_to_file(file_name, process_diff_file(head_diff))
+    write_to_file(file_name, head_diff)
     return file_name
 
 def lhead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -165,7 +168,7 @@ def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = arg2
     if url is None:
-        print("usage: a %s <url>" % (URL['code']))
+        print("Need to pass parameter for this command.")
         return
 
     file_name = get_qualifier_with_custom_ctx("url-save", "txt")
@@ -296,18 +299,30 @@ NEXT_FILE = """
 %s
 
 
-
 """
 
 def process_diff_file(diff_text):
     lines = diff_text.split(NEW_LINE)
     buffer = []
+    file_paths = []
+    file_names = []
 
     for line in lines:
         if line.startswith("diff --git"):
-            buffer.append(NEXT_FILE % (line.split("/")[-1]))
+            file_path = line.split(" ")[-1][2:]
+            file_paths.append(file_path)
+
+            file_name = line.split("/")[-1]
+            file_names.append(file_name)
+
+            buffer.append(NEXT_FILE % (file_name))
 
         buffer.append(line)
+
+    p1 = NEW_LINE.join(file_paths)
+    p2 = NEW_LINE.join(file_names)
+    fn = "\n\n\n%s\n%s\n\n%s\n\n%s\n\n" % (p1, HR, p2, HR)
+    buffer = [fn] + buffer
 
     return NEW_LINE.join(buffer)
 
