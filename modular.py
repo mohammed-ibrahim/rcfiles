@@ -82,7 +82,7 @@ def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 def shead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
     file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(), get_head_commit_id(), slugify(get_current_branch()))
-    write_to_file(file_name, head_diff)
+    write_to_file(file_name, process_diff_file(head_diff))
     return file_name
 
 def lhead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -205,35 +205,10 @@ def save_curl(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor_if_specified(params, file_name)
 
-
-NEXT_FILE = """
-
-
-
-----------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------
-
-
-
-
-"""
-
 def save_diff(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     git_diff = s_run_process_and_get_output('git diff')
     file_name = "%s.diff" % get_qualifier_with_ctx()
-
-    lines = git_diff.split(NEW_LINE)
-    buffer = []
-
-    for line in lines:
-        if line.startswith("diff --git"):
-            buffer.append(NEXT_FILE)
-
-        buffer.append(line)
-
-    write_to_file(file_name, NEW_LINE.join(buffer))
+    write_to_file(file_name, process_diff_file(git_diff))
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor(file_name)
 
@@ -308,6 +283,33 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #
 #     if open_in_editor:
 #         open_file_in_editor(temp_note_file)
+
+
+NEXT_FILE = """
+
+
+
+----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+%s
+
+
+
+"""
+
+def process_diff_file(diff_text):
+    lines = diff_text.split(NEW_LINE)
+    buffer = []
+
+    for line in lines:
+        if line.startswith("diff --git"):
+            buffer.append(NEXT_FILE % (line.split("/")[-1]))
+
+        buffer.append(line)
+
+    return NEW_LINE.join(buffer)
 
 def read_stdin():
     try:
