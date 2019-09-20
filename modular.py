@@ -264,8 +264,17 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     ticket_name = "%s.%s.txt" % (slugify_c(repo_name), slugify_c(branch_to_use))
     file_identifier = os.path.join(local_directory, ticket_name)
 
+    variables = {
+        'repo_url': get_repo_url(),
+        'user': get_current_user(),
+        'branch': branch_to_use
+    }
+
     if not os.path.isfile(file_identifier):
-        write_to_file(file_identifier, "New Ticket")
+        # invoked first time:
+        template_text = load_template_contents("ticket.txt")
+        template_text = txt_substitute(template_text, variables)
+        write_to_file(file_identifier, template_text)
 
     open_file_in_editor(file_identifier)
 
@@ -286,6 +295,32 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #
 #     if open_in_editor:
 #         open_file_in_editor(temp_note_file)
+
+def txt_substitute(input, replacement_vars):
+
+    text = input
+    for key in replacement_vars:
+        rkey = "{%s}" % key
+        rval = replacement_vars[key]
+
+        text = text.replace(rkey, rval)
+
+    return text
+
+def read_file_contents(file_path):
+    contents = None
+    with open(file_path, "r") as file_pointer:
+        contents = file_pointer.read()
+
+    return contents
+
+def get_repo_base_path():
+    return os.path.dirname(os.path.abspath(__file__))
+
+def load_template_contents(template_name):
+    template_dir = os.path.join(get_repo_base_path(), "templates", template_name)
+    print("Loading file: %s" % template_dir)
+    return read_file_contents(template_dir)
 
 
 NEXT_FILE = """
