@@ -130,7 +130,7 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 merge_staging_template = """
 git checkout dev/staging
 git pull origin dev/staging
-git merge origin/topic/%s/%s --no-commit --no-ff
+git merge origin/topic/{user}/{branch} --no-commit --no-ff
 git commit
 git push
 """
@@ -141,7 +141,11 @@ def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Need to send branch as parameter")
         err_exit()
 
-    cmd = merge_staging_template % (get_current_user(), branch)
+    args = {
+        'user': get_current_user(),
+        'branch': branch
+    }
+    cmd = txt_substitute(merge_staging_template, args)
     file_name = "%s.txt" % (get_qualifier_with_ctx())
     write_to_file(file_name, cmd)
     open_file_in_editor(file_name)
@@ -149,7 +153,7 @@ def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 merge_master_template = """
 git checkout master
 git pull origin master
-git merge origin/topic/%s/%s --no-commit --no-ff
+git merge origin/topic/{user}/{branch} --no-commit --no-ff
 git commit
 git push
 """
@@ -160,7 +164,11 @@ def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Need to send branch as parameter")
         err_exit()
 
-    cmd = merge_master_template % (get_current_user(), branch)
+    args = {
+        'user': get_current_user(),
+        'branch': branch
+    }
+    cmd = txt_substitute(merge_master_template, args)
     file_name = "%s.txt" % (get_qualifier_with_ctx())
     write_to_file(file_name, cmd)
     open_file_in_editor(file_name)
