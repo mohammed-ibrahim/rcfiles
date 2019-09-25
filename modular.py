@@ -268,8 +268,7 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         return
 
     local_directory = env_variables['TICKETS_DIR']
-    repo_name = get_repo_url().split("/")[-1]
-    ticket_name = "%s.%s.txt" % (slugify_c(repo_name), slugify_c(branch_to_use))
+    ticket_name = "%s.txt" % (slugify_c(branch_to_use))
     file_identifier = os.path.join(local_directory, ticket_name)
 
     variables = {
