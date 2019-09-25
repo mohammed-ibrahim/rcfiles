@@ -304,6 +304,24 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #     if open_in_editor:
 #         open_file_in_editor(temp_note_file)
 
+def find_ticket(base_dir, ticket_name):
+    sub_directores = []
+
+    for file in os.listdir(base_dir):
+        current_base_dir_items = os.path.join(base_dir, file)
+        if os.path.isdir(current_base_dir_items):
+            sub_directores.append(current_base_dir_items)
+
+    for sub_dir in sub_directores:
+
+        for file_in_subdir in os.listdir(sub_dir):
+
+            current_subdirectory_item = os.path.join(sub_dir, file_in_subdir)
+            if os.path.isfile(current_subdirectory_item) and file_in_subdir == ticket_name:
+                return current_subdirectory_item
+
+    return None
+
 def txt_substitute(input, replacement_vars):
 
     text = input
