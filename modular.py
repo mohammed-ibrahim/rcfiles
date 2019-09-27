@@ -27,54 +27,56 @@ HR = "--------------------------------------------------------------------------
 # /_______  /__/\_ \\___  >\___  >____/ |__| |__|\____/|___|  / \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #         \/      \/    \/     \/                           \/          \/     \/          \/            \/    \/
 
-update_branch_template = """
 
-Submit New
-rbt post -g -o
-
-Update
-rbt post -u
-
-Smart Update
-rbt post -u -o -r <review-id>
-
-JENKINS :: origin/topic/%s/%s
-REMOTE BRANCH :: %s
-
-git branch --set-upstream-to=origin/master %s
-
-git commit --amend
-git commit --amend --no-edit
-
-git pull
-git rebase
-
-
-a shead &&
-git push origin :topic/%s/%s &&
-git push origin HEAD:topic/%s/%s
-"""
-def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-
-    current_branch = arg2
-    if current_branch is None:
-        current_branch = get_current_branch()
-
-    current_user_details = s_run_process_and_get_output("whoami")
-    current_user = current_user_details.split(NEW_LINE)[0]
-
-    if "-j" in params:
-        jenkin_cmd = "origin/topic/%s/%s" % (current_user, get_current_branch())
-        print("Copied: %s" % jenkin_cmd)
-        pyperclip.copy(jenkin_cmd)
-        return
-
-    required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
-
-    cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
-    file_name = "%s.txt" % (get_qualifier_with_ctx())
-    write_to_file(file_name, cmd)
-    open_file_in_editor(file_name)
+#
+# update_branch_template = """
+#
+# Submit New
+# rbt post -g -o
+#
+# Update
+# rbt post -u
+#
+# Smart Update
+# rbt post -u -o -r <review-id>
+#
+# JENKINS :: origin/topic/%s/%s
+# REMOTE BRANCH :: %s
+#
+# git branch --set-upstream-to=origin/master %s
+#
+# git commit --amend
+# git commit --amend --no-edit
+#
+# git pull
+# git rebase
+#
+#
+# a shead &&
+# git push origin :topic/%s/%s &&
+# git push origin HEAD:topic/%s/%s
+# """
+# def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+#
+#     current_branch = arg2
+#     if current_branch is None:
+#         current_branch = get_current_branch()
+#
+#     current_user_details = s_run_process_and_get_output("whoami")
+#     current_user = current_user_details.split(NEW_LINE)[0]
+#
+#     if "-j" in params:
+#         jenkin_cmd = "origin/topic/%s/%s" % (current_user, get_current_branch())
+#         print("Copied: %s" % jenkin_cmd)
+#         pyperclip.copy(jenkin_cmd)
+#         return
+#
+#     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
+#
+#     cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
+#     file_name = "%s.txt" % (get_qualifier_with_ctx())
+#     write_to_file(file_name, cmd)
+#     open_file_in_editor(file_name)
 
 def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
@@ -127,51 +129,51 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
     open_url_in_browser(required_url)
 
-merge_staging_template = """
-git checkout dev/staging
-git pull origin dev/staging
-git merge origin/topic/{user}/{branch} --no-commit --no-ff
-git commit
-git push
-"""
-def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+# merge_staging_template = """
+# git checkout dev/staging
+# git pull origin dev/staging
+# git merge origin/topic/{user}/{branch} --no-commit --no-ff
+# git commit
+# git push
+# """
+# def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+#
+#     branch = arg2
+#     if branch is None:
+#         print("Need to send branch as parameter")
+#         err_exit()
+#
+#     args = {
+#         'user': get_current_user(),
+#         'branch': branch
+#     }
+#     cmd = txt_substitute(merge_staging_template, args)
+#     file_name = "%s.txt" % (get_qualifier_with_ctx())
+#     write_to_file(file_name, cmd)
+#     open_file_in_editor(file_name)
 
-    branch = arg2
-    if branch is None:
-        print("Need to send branch as parameter")
-        err_exit()
-
-    args = {
-        'user': get_current_user(),
-        'branch': branch
-    }
-    cmd = txt_substitute(merge_staging_template, args)
-    file_name = "%s.txt" % (get_qualifier_with_ctx())
-    write_to_file(file_name, cmd)
-    open_file_in_editor(file_name)
-
-merge_master_template = """
-git checkout master
-git pull origin master
-git merge origin/topic/{user}/{branch} --no-commit --no-ff
-git commit
-git push
-"""
-def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-
-    branch = arg2
-    if branch is None:
-        print("Need to send branch as parameter")
-        err_exit()
-
-    args = {
-        'user': get_current_user(),
-        'branch': branch
-    }
-    cmd = txt_substitute(merge_master_template, args)
-    file_name = "%s.txt" % (get_qualifier_with_ctx())
-    write_to_file(file_name, cmd)
-    open_file_in_editor(file_name)
+# merge_master_template = """
+# git checkout master
+# git pull origin master
+# git merge origin/topic/{user}/{branch} --no-commit --no-ff
+# git commit
+# git push
+# """
+# def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+#
+#     branch = arg2
+#     if branch is None:
+#         print("Need to send branch as parameter")
+#         err_exit()
+#
+#     args = {
+#         'user': get_current_user(),
+#         'branch': branch
+#     }
+#     cmd = txt_substitute(merge_master_template, args)
+#     file_name = "%s.txt" % (get_qualifier_with_ctx())
+#     write_to_file(file_name, cmd)
+#     open_file_in_editor(file_name)
 
 def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = arg2
@@ -536,13 +538,13 @@ if __name__ == "__main__":
     }
 
     primary_operations = [
-        get_cmd("ub",       "Update Branch Commands.",              "-j", update_branch),
+        # get_cmd("ub",       "Update Branch Commands.",              "-j", update_branch),
         get_cmd("head",     "Save head commit & Open in editor.",   "non", head),
         get_cmd("shead",    "Save head commit patch to backup.",    "non", shead),
         get_cmd("lhead",    "List file in head commit.",            "non", lhead),
         get_cmd("ob",       "Open Branch",                          "non", open_branch),
-        get_cmd("ms",       "Merge into staging",                   "non", merge_staging),
-        get_cmd("mm",       "Merge into master",                    "non", merge_master),
+        # get_cmd("ms",       "Merge into staging",                   "non", merge_staging),
+        # get_cmd("mm",       "Merge into master",                    "non", merge_master),
         get_cmd("url",      "Save url output to file",              "non", save_url),
         get_cmd("curl",     "Save curl output to file",             "non", save_curl),
         get_cmd("diff",     "Save git diff",                        "non", save_diff),
