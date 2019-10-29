@@ -18,6 +18,8 @@ import uuid
 #         \/            \/     \/            \/     \/          \/
 NEW_LINE = "\n"
 IGNORE_OPEN_EDITOR = "--ignore-open-editor"
+EDITOR_ATOM = "atom"
+EDITOR_VIM = "vim"
 HR = "----------------------------------------------------------------------------------------------------------"
 
 # ___________                            __  .__                   _____          __  .__               .___
@@ -82,7 +84,8 @@ def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
     file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, process_diff_file(head_diff))
-    open_file_in_editor(file_name)
+    pyperclip.copy("vi %s" % file_name)
+    # open_file_in_editor(file_name)
 
 def shead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
@@ -223,7 +226,7 @@ def save_diff(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     file_name = "%s.diff" % get_qualifier_with_ctx()
     write_to_file(file_name, process_diff_file(git_diff))
     pyperclip.copy("vi %s" % file_name)
-    open_file_in_editor(file_name)
+    # open_file_in_editor(file_name, EDITOR_VIM)
 
 def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     fully_qualified_path_for_backup = get_qualifier_with_ctx()
@@ -235,7 +238,7 @@ def save_git_status(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     file_name = "%s.diff" % get_qualifier_with_ctx()
     write_to_file(file_name, git_diff)
     pyperclip.copy("vi %s" % file_name)
-    open_file_in_editor(file_name)
+    open_file_in_editor(file_name, EDITOR_ATOM)
 
 def gen_uuid(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     ustr = str(uuid.uuid4())
@@ -246,7 +249,7 @@ def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     contents = read_stdin()
     file_name = "%s.cmd.out.txt" % get_qualifier_with_ctx()
     write_to_file(file_name, contents)
-    open_file_in_editor(file_name)
+    open_file_in_editor(file_name, EDITOR_ATOM)
 
 def reduce_filenames(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     contents = read_stdin()
@@ -285,7 +288,7 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         template_text = txt_substitute(template_text, variables)
         write_to_file(file_identifier, template_text)
 
-    open_file_in_editor(file_identifier)
+    open_file_in_editor(file_identifier, EDITOR_ATOM)
 
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
@@ -404,10 +407,18 @@ def open_url_in_browser(url):
 
 def open_file_in_editor_if_specified(params, file_name):
     if "--atom" in params:
-        open_file_in_editor(file_name)
+        open_file_in_editor(file_name, EDITOR_ATOM)
 
-def open_file_in_editor(file_name):
-    s_run_process_and_get_output("/usr/local/bin/atom %s" % file_name)
+# def open_file_in_editor(file_name):
+#     open_file_in_editor(file_name, EDITOR_ATOM)
+
+def open_file_in_editor(file_name, editor):
+
+    if editor == EDITOR_ATOM:
+        s_run_process_and_get_output("/usr/local/bin/atom %s" % file_name)
+    else:
+        s_run_process_and_get_output("vi %s" % file_name)
+
 
 def get_qualifier_with_ctx():
     # ctx = get_param(2)
@@ -489,10 +500,24 @@ def get_non_cmd_params():
 
     return non_cmd_list
 
+def parse_branch_name_from_current_git_branch(branch_name):
+    branch_name = branch_name[2:] # remove '* '
+    num_dashes = branch_name.count("-")
+
+    if num_dashes > 1:
+        index_of_second_count = branch_name.replace("-", "=", 1).index("-")
+        branch_name = branch_name[0:index_of_second_count]
+
+    return branch_name
+
 def get_current_branch():
     branch_details = s_run_process_and_get_output("git branch")
-    current_branch = [x for x in branch_details.split(NEW_LINE) if "*" in x][0]
-    return current_branch[2:]
+    marked_branches = [x for x in branch_details.split(NEW_LINE) if "*" in x]
+    if len(marked_branches) < 1:
+        print("git branch didnt return any marked branches.")
+        err_exit()
+    current_branch = marked_branches[0]
+    return parse_branch_name_from_current_git_branch(current_branch)
 
 def get_cmd(code, desc, options, fnc):
     return {

@@ -62,6 +62,7 @@ ___________        .___
 --guidelines
 
 Test case name's should be very carefully selected.
+public method which doesn't belong to interface must have description.
 Log very carefully
 Ensure that every assert has message along with it, No assert's without messages.
 Run all the test classes.
@@ -92,6 +93,7 @@ rbt post -g -o
 Latest update:
 rbt post -r <review-id> <latest-commit-id>
 
+--jenkins
 JENKINS :: origin/topic/{user}/{branch}
 REMOTE BRANCH :: {repo_url}/commits/topic/{user}/{branch}
 
@@ -128,7 +130,7 @@ git push origin HEAD:topic/{user}/{branch}
 
 
 
-
+--precommits
 
 
 
