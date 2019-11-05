@@ -38,6 +38,7 @@ rbt post -g -o
 Latest update:
 rbt post -r <review-id> <latest-commit-id>
 
+--------------------------------------------------------------------------------
 --jenkins
 JENKINS :: origin/topic/{user}/{branch}
 REMOTE BRANCH :: {repo_url}/commits/topic/{user}/{branch}
@@ -53,6 +54,27 @@ git rebase
 a shead &&
 git push origin :topic/{user}/{branch} &&
 git push origin HEAD:topic/{user}/{branch}
+
+
+--------------------------------------------------------------------------------
+--merge-staging
+
+git checkout dev/staging &&
+git pull origin dev/staging
+git merge origin/topic/{user}/{branch} --no-commit --no-ff
+git commit
+git push
+
+
+--------------------------------------------------------------------------------
+--merge-master
+
+git checkout master &&
+git pull origin master
+git merge origin/topic/{user}/{branch} --no-commit --no-ff
+git commit
+git push
+
 """
 def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
