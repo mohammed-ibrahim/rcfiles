@@ -30,55 +30,66 @@ HR = "--------------------------------------------------------------------------
 #         \/      \/    \/     \/                           \/          \/     \/          \/            \/    \/
 
 
-#
-# update_branch_template = """
-#
-# Submit New
-# rbt post -g -o
-#
-# Update
-# rbt post -u
-#
-# Smart Update
-# rbt post -u -o -r <review-id>
-#
-# JENKINS :: origin/topic/%s/%s
-# REMOTE BRANCH :: %s
-#
-# git branch --set-upstream-to=origin/master %s
-#
-# git commit --amend
-# git commit --amend --no-edit
-#
-# git pull
-# git rebase
-#
-#
-# a shead &&
-# git push origin :topic/%s/%s &&
-# git push origin HEAD:topic/%s/%s
-# """
-# def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-#
-#     current_branch = arg2
-#     if current_branch is None:
-#         current_branch = get_current_branch()
-#
-#     current_user_details = s_run_process_and_get_output("whoami")
-#     current_user = current_user_details.split(NEW_LINE)[0]
-#
-#     if "-j" in params:
-#         jenkin_cmd = "origin/topic/%s/%s" % (current_user, get_current_branch())
-#         print("Copied: %s" % jenkin_cmd)
-#         pyperclip.copy(jenkin_cmd)
-#         return
-#
-#     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
-#
-#     cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
-#     file_name = "%s.txt" % (get_qualifier_with_ctx())
-#     write_to_file(file_name, cmd)
-#     open_file_in_editor(file_name)
+
+update_branch_template = """
+Submit New
+rbt post -g -o
+
+Latest update:
+rbt post -r <review-id> <latest-commit-id>
+
+--jenkins
+JENKINS :: origin/topic/{user}/{branch}
+REMOTE BRANCH :: {repo_url}/commits/topic/{user}/{branch}
+
+git branch --set-upstream-to=origin/master {branch}
+
+git commit --amend
+git commit --amend --no-edit
+
+git pull
+git rebase
+
+a shead &&
+git push origin :topic/{user}/{branch} &&
+git push origin HEAD:topic/{user}/{branch}
+"""
+def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+
+    branch_to_use = arg2
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
+
+    if branch_to_use is None or branch_to_use.strip() == "":
+        print("Couldn't determine branch")
+        return
+
+    local_directory = env_variables['TICKETS_DIR']
+    ticket_name = "%s.txt" % (slugify_c(branch_to_use))
+    file_identifier = os.path.join(local_directory, ticket_name)
+
+    variables = {
+        'repo_url': get_repo_url(),
+        'user': get_current_user(),
+        'branch': branch_to_use
+    }
+
+    cmd = txt_substitute(update_branch_template, variables)
+    # cmd = update_branch_template % (current_user, current_branch, required_url, current_branch, current_user, current_branch, current_user, current_branch)
+    # file_name = "%s.txt" % (get_qualifier_with_ctx())
+    # write_to_file(file_name, cmd)
+    # open_file_in_editor(file_name)
+
+    print(cmd)
+
+def copy_full_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    branch_to_use = arg2
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
+
+    jenkin_cmd = "origin/topic/%s/%s" % (get_current_user(), branch_to_use)
+    pyperclip.copy(jenkin_cmd)
+    print("Copied: %s" % jenkin_cmd)
 
 def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
@@ -290,6 +301,17 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     open_file_in_editor(file_identifier, EDITOR_ATOM)
 
+def slugify_cmd_line(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    if len(params) < 1:
+        print("need params to be slugified")
+        err_exit()
+
+    text = " ".join(params)
+    text = slugify(text)
+    pyperclip.copy(text)
+    print(text)
+
+
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
 # |    |   /\   __\  |  | |  \   __<   |  |  /  \ /  \_/ __ \   __\  |  \ /  _ \ / __ |/  ___/
@@ -455,7 +477,7 @@ def slugify(text):
 
 def slugify_c(text):
     output = re.sub(r'\W+', '-', text)
-    return output
+    return output.strip("-")
 
 def pull_env_var(key):
     env_value = os.environ.get(key, None)
@@ -502,11 +524,11 @@ def get_non_cmd_params():
 
 def parse_branch_name_from_current_git_branch(branch_name):
     branch_name = branch_name[2:] # remove '* '
-    num_dashes = branch_name.count("-")
-
-    if num_dashes > 1:
-        index_of_second_count = branch_name.replace("-", "=", 1).index("-")
-        branch_name = branch_name[0:index_of_second_count]
+    # num_dashes = branch_name.count("-")
+    #
+    # if num_dashes > 1:
+    #     index_of_second_count = branch_name.replace("-", "=", 1).index("-")
+    #     branch_name = branch_name[0:index_of_second_count]
 
     return branch_name
 
@@ -563,7 +585,8 @@ if __name__ == "__main__":
     }
 
     primary_operations = [
-        # get_cmd("ub",       "Update Branch Commands.",              "-j", update_branch),
+        get_cmd("ub",       "Update Branch Commands.",              "non", update_branch),
+        get_cmd("j",        "Copy full branch for Jenkins Command",                  "non", copy_full_branch),
         get_cmd("head",     "Save head commit & Open in editor.",   "non", head),
         get_cmd("shead",    "Save head commit patch to backup.",    "non", shead),
         get_cmd("lhead",    "List file in head commit.",            "non", lhead),
@@ -579,7 +602,8 @@ if __name__ == "__main__":
         get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open),
         get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy),
         get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames),
-        get_cmd("o",        "Open branch specifiec file",           "branch_name" , open_branch_ticket)
+        get_cmd("o",        "Open branch specifiec file",           "branch_name" , open_branch_ticket),
+        get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
