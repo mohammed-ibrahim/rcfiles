@@ -9,6 +9,7 @@ import re
 import requests
 import webbrowser
 import uuid
+import urllib
 
 # _________                         __                 __
 # \_   ___ \  ____   ____   _______/  |______    _____/  |_  ______
@@ -333,6 +334,21 @@ def slugify_cmd_line(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy(text)
     print(text)
 
+def compare_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    local_commit_id = get_head_commit_id()
+    remote_commit_id = get_remote_commit_id(env_variables)
+
+    print("Local commit: %s" % local_commit_id)
+    print("Remote commit: %s" % remote_commit_id)
+    if local_commit_id != remote_commit_id:
+        print(HR)
+        print("ERROR")
+        print("Commits are different")
+        print("ERROR")
+        print(HR)
+    else:
+        print("Commits are Same!!")
+
 
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
@@ -489,6 +505,38 @@ def write_to_file(file_name, content):
 def get_head_commit_id():
     return s_run_process_and_get_output('git rev-parse HEAD').replace(NEW_LINE, "").strip()
 
+def get_remote_commit_id(env_variables):
+    current_branch = get_current_branch()
+    remote_branch = "topic/%s/%s" % (get_current_user(), current_branch)
+
+    gitlab_domain = env_variables['GITLAB_DOMAIN']
+    gitlab_api_key = env_variables['GITLAB_API_KEY']
+    header = {
+        'PRIVATE-TOKEN': gitlab_api_key
+    }
+
+    gitlab_api = "https://%s/api/v4/projects/%s/repository/commits/%s" % (gitlab_domain, get_gitlab_api_project_key(), url_encode(remote_branch))
+    req = requests.get(gitlab_api, headers = header)
+    status_code = req.status_code
+
+    if status_code == 200:
+        data = json.loads(req.content)
+        if 'id' in data:
+            return data['id']
+        else:
+            print("id was not found in gitlab api response: %s" % req.content)
+    else:
+        print("There was problem communicating to : %s", gitlab_api)
+        err_exit()
+
+def get_gitlab_api_project_key():
+    process_output = s_run_process_and_get_output('git config remote.origin.url')
+    process_output = process_output.split(":")[1][:-5]
+    return url_encode(process_output)
+
+def url_encode(s):
+    return urllib.quote_plus(s)
+
 def get_ts():
     return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
 
@@ -603,7 +651,9 @@ if __name__ == "__main__":
 
     env_variables = {
         'LOCAL_BACKUP_DIR': pull_env_var('LOCAL_BACKUP_DIR'),
-        'TICKETS_DIR': pull_env_var('TICKETS_DIR')
+        'TICKETS_DIR': pull_env_var('TICKETS_DIR'),
+        'GITLAB_DOMAIN': pull_env_var('GITLAB_DOMAIN'),
+        'GITLAB_API_KEY':  pull_env_var('GITLAB_API_KEY')
     }
 
     primary_operations = [
@@ -625,7 +675,8 @@ if __name__ == "__main__":
         get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy),
         get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames),
         get_cmd("o",        "Open branch specifiec file",           "branch_name" , open_branch_ticket),
-        get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line)
+        get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line),
+        get_cmd("ct",       "Compare top commit with remote top",   "non", compare_top_commit)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
