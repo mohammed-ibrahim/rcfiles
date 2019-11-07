@@ -33,49 +33,36 @@ HR = "--------------------------------------------------------------------------
 
 
 update_branch_template = """
-Submit New
-rbt post -g -o
+----------------------------------------------------------------------------------------
+RB new                  ::   rbt post -g -o
+RB Update               ::   rbt post -r <review-id> <latest-commit-id>
 
-Latest update:
-rbt post -r <review-id> <latest-commit-id>
+Jenkins                 ::   origin/topic/{user}/{branch}
+Remote Branch           ::   {repo_url}/commits/topic/{user}/{branch}
 
---------------------------------------------------------------------------------
---jenkins
-JENKINS :: origin/topic/{user}/{branch}
-REMOTE BRANCH :: {repo_url}/commits/topic/{user}/{branch}
+Upstream                ::   git branch --set-upstream-to=origin/master {branch}
 
-git branch --set-upstream-to=origin/master {branch}
+Amend                   ::   git commit --amend
+Amend no-edid           ::   git commit --amend --no-edit
 
-git commit --amend
-git commit --amend --no-edit
+Update commit           ::   git pull && git rebase
 
-git pull
-git rebase
+Push to remote branch   ::   a shead &&
+                             git push origin :topic/{user}/{branch} &&
+                             git push origin HEAD:topic/{user}/{branch}
 
-a shead &&
-git push origin :topic/{user}/{branch} &&
-git push origin HEAD:topic/{user}/{branch}
+Merge Staging           ::   git checkout dev/staging &&
+                             git pull origin dev/staging
+                             git merge origin/topic/{user}/{branch} --no-commit --no-ff
+                             git commit
+                             git push
 
-
---------------------------------------------------------------------------------
---merge-staging
-
-git checkout dev/staging &&
-git pull origin dev/staging
-git merge origin/topic/{user}/{branch} --no-commit --no-ff
-git commit
-git push
-
-
---------------------------------------------------------------------------------
---merge-master
-
-git checkout master &&
-git pull origin master
-git merge origin/topic/{user}/{branch} --no-commit --no-ff
-git commit
-git push
-
+Merge Master            ::   git checkout master &&
+                             git pull origin master
+                             git merge origin/topic/{user}/{branch} --no-commit --no-ff
+                             git commit
+                             git push
+----------------------------------------------------------------------------------------
 """
 def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
@@ -334,21 +321,39 @@ def slugify_cmd_line(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy(text)
     print(text)
 
+CTC_TEMPLATE = """
+
+-------------------------------------------------------------
+Diff Status      ::  {diff_status}
+Title            ::  {title}
+Local Commit     ::  {local_commit_id}
+Remote Commit    ::  {remote_commit_id}
+-------------------------------------------------------------
+
+"""
 def compare_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    local_commit_id = get_head_commit_id()
-    remote_commit_id = get_remote_commit_id(env_variables)
+    branch_to_use = arg2
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
 
-    print("Local commit: %s" % local_commit_id)
-    print("Remote commit: %s" % remote_commit_id)
-    if local_commit_id != remote_commit_id:
-        print(HR)
-        print("ERROR")
-        print("Commits are different")
-        print("ERROR")
-        print(HR)
-    else:
-        print("Commits are Same!!")
+    local_commit_id = get_head_commit_for_branch(branch_to_use)
+    remote_commit_details = get_remote_branch_top_commit_details(branch_to_use, env_variables)
+    remote_commit_id = remote_commit_details['id']
+    title = remote_commit_details['title']
+    diff_status = "!!COMMITS DIFFER!!"
 
+    if local_commit_id == remote_commit_id:
+        diff_status = "Commits are Same"
+
+    variables = {
+        'local_commit_id': local_commit_id,
+        'remote_commit_id': remote_commit_id,
+        'title': title,
+        'diff_status': diff_status
+    }
+
+    text = txt_substitute(CTC_TEMPLATE, variables)
+    print(text)
 
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
@@ -505,9 +510,19 @@ def write_to_file(file_name, content):
 def get_head_commit_id():
     return s_run_process_and_get_output('git rev-parse HEAD').replace(NEW_LINE, "").strip()
 
-def get_remote_commit_id(env_variables):
-    current_branch = get_current_branch()
-    remote_branch = "topic/%s/%s" % (get_current_user(), current_branch)
+def get_head_commit_for_branch(branch_name):
+    process_output = s_run_process_and_get_output('git log -1 %s' % branch_name)
+    first_line = process_output.split("\n")[0]
+    parts = first_line.split(" ")
+    if len(parts) < 2:
+        print("Failed to parse the data: %s" % process_output)
+        err_exit()
+
+    commit_id = parts[1]
+    return commit_id
+
+def get_remote_branch_top_commit_details(branch_name, env_variables):
+    remote_branch = "topic/%s/%s" % (get_current_user(), branch_name)
 
     gitlab_domain = env_variables['GITLAB_DOMAIN']
     gitlab_api_key = env_variables['GITLAB_API_KEY']
@@ -521,10 +536,7 @@ def get_remote_commit_id(env_variables):
 
     if status_code == 200:
         data = json.loads(req.content)
-        if 'id' in data:
-            return data['id']
-        else:
-            print("id was not found in gitlab api response: %s" % req.content)
+        return data
     else:
         print("There was problem communicating to : %s", gitlab_api)
         err_exit()
@@ -676,7 +688,7 @@ if __name__ == "__main__":
         get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames),
         get_cmd("o",        "Open branch specifiec file",           "branch_name" , open_branch_ticket),
         get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line),
-        get_cmd("ct",       "Compare top commit with remote top",   "non", compare_top_commit)
+        get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
