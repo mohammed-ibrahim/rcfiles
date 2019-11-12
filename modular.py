@@ -338,6 +338,10 @@ def compare_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     local_commit_id = get_head_commit_for_branch(branch_to_use)
     remote_commit_details = get_remote_branch_top_commit_details(branch_to_use, env_variables)
+    if remote_commit_details is None:
+        print("There was an error fetching remote branch details")
+        err_exit()
+
     remote_commit_id = remote_commit_details['id']
     title = remote_commit_details['title']
     diff_status = "!!COMMITS DIFFER!!"
@@ -354,6 +358,43 @@ def compare_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     text = txt_substitute(CTC_TEMPLATE, variables)
     print(text)
+
+
+def enlist_branches(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    branch_to_use = arg2
+    if branch_to_use is not None:
+        top_commit_details = get_remote_branch_top_commit_details(branch_to_use, env_variables)
+        if top_commit_details is not None:
+            print("\n\n%s - %s\n\n" % (branch_to_use, top_commit_details['title']))
+        else:
+            print("Failed to fetch branch details")
+
+        sys.exit(0)
+
+    text = s_run_process_and_get_output("git branch")
+    lines = text.split("\n")
+    lines = [a[2:] for a in lines if len(a.strip()) > 0]
+    branches = [a for a in lines if a not in ['master', 'dev/staging']]
+
+    buffer = []
+    index = 1
+    for branch in branches:
+        top_commit_details = get_remote_branch_top_commit_details(branch, env_variables)
+        if top_commit_details is not None:
+            buffer.append("%s - %s" % (branch.ljust(30), top_commit_details['title']))
+
+    print("\n\n----------------------------------------------------------------")
+    print("\n".join(buffer))
+    print("----------------------------------------------------------------\n\n")
+
+def open_jira_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    branch_to_use = arg2
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
+
+    jira_domain = env_variables['JIRA_DOMAIN']
+    jira_url = "%s/jira/browse/%s" % (jira_domain, branch_to_use)
+    open_url_in_browser(jira_url)
 
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
@@ -539,7 +580,7 @@ def get_remote_branch_top_commit_details(branch_name, env_variables):
         return data
     else:
         print("There was problem communicating to : %s", gitlab_api)
-        err_exit()
+        return None
 
 def get_gitlab_api_project_key():
     process_output = s_run_process_and_get_output('git config remote.origin.url')
@@ -665,7 +706,8 @@ if __name__ == "__main__":
         'LOCAL_BACKUP_DIR': pull_env_var('LOCAL_BACKUP_DIR'),
         'TICKETS_DIR': pull_env_var('TICKETS_DIR'),
         'GITLAB_DOMAIN': pull_env_var('GITLAB_DOMAIN'),
-        'GITLAB_API_KEY':  pull_env_var('GITLAB_API_KEY')
+        'GITLAB_API_KEY':  pull_env_var('GITLAB_API_KEY'),
+        'JIRA_DOMAIN': pull_env_var('JIRA_DOMAIN')
     }
 
     primary_operations = [
@@ -688,7 +730,9 @@ if __name__ == "__main__":
         get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames),
         get_cmd("o",        "Open branch specifiec file",           "branch_name" , open_branch_ticket),
         get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line),
-        get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit)
+        get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit),
+        get_cmd("en",       "Enlist the branch",                    "non", enlist_branches),
+        get_cmd("t",        "Open Jira Ticket",                     "non", open_jira_ticket)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
