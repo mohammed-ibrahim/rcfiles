@@ -45,7 +45,8 @@ if __name__ == "__main__":
         print("usage: zipper.py <zip-file-storage-dir> <direcotry-to-be-zipped>")
         sys.exit(1)
 
-    file_name = "zipped-file-%s.zip" % (get_ts())
+    directory_name = os.path.basename(os.path.normpath(zip_source_files))
+    file_name = "zipped-file-%s-%s.zip" % (directory_name, get_ts())
     zip_file_name = os.path.join(zip_file_storage_directory, file_name)
     print(zip_file_name)
     make_zip(zip_file_name, zip_source_files)
