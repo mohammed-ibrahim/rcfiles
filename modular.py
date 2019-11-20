@@ -153,51 +153,78 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
     open_url_in_browser(required_url)
 
-# merge_staging_template = """
-# git checkout dev/staging
-# git pull origin dev/staging
-# git merge origin/topic/{user}/{branch} --no-commit --no-ff
-# git commit
-# git push
-# """
-# def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-#
-#     branch = arg2
-#     if branch is None:
-#         print("Need to send branch as parameter")
-#         err_exit()
-#
-#     args = {
-#         'user': get_current_user(),
-#         'branch': branch
-#     }
-#     cmd = txt_substitute(merge_staging_template, args)
-#     file_name = "%s.txt" % (get_qualifier_with_ctx())
-#     write_to_file(file_name, cmd)
-#     open_file_in_editor(file_name)
+merge_staging_template = """
+git checkout dev/staging
+git pull origin dev/staging
+git merge origin/topic/{user}/{branch} --no-commit --no-ff
+git commit
+git push
+"""
+def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    # merge to staging script:
+    #     1. Check local commit has all the entries
+    #     2. Check local commit is up to date with remote commit
+    #     3. delete and fetch dev/staging
+    #     4. Print the command on the screen
 
-# merge_master_template = """
-# git checkout master
-# git pull origin master
-# git merge origin/topic/{user}/{branch} --no-commit --no-ff
-# git commit
-# git push
-# """
-# def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-#
-#     branch = arg2
-#     if branch is None:
-#         print("Need to send branch as parameter")
-#         err_exit()
-#
-#     args = {
-#         'user': get_current_user(),
-#         'branch': branch
-#     }
-#     cmd = txt_substitute(merge_master_template, args)
-#     file_name = "%s.txt" % (get_qualifier_with_ctx())
-#     write_to_file(file_name, cmd)
-#     open_file_in_editor(file_name)
+
+    branch = arg2
+    if branch is None:
+        print("Need to send branch as parameter")
+        err_exit()
+
+    commit_hash_text = s_run_process_and_get_output("git log -1 %s" % branch, exit_on_failure=True)
+    ensure_commit_hash_has_value(commit_hash_text, "Reviewed by:")
+    ensure_commit_hash_has_value(commit_hash_text, "Review URL:")
+    ensure_commit_hash_has_value(commit_hash_text, "Bug Number:")
+
+    head_commit_id = get_head_commit_for_branch(branch)
+    remote_commit_id_details = get_remote_branch_top_commit_details(branch, env_variables)
+    if remote_commit_id_details is None:
+        print("There was an error fetching remote branch details: branch: %s" % branch)
+        err_exit()
+
+    remote_commit_id = remote_commit_id_details['id']
+
+    if head_commit_id != remote_commit_id:
+        print("Local commit doesn't match remote commit: local commit: %s remote commit: %s branch: %s" % (head_commit_id, remote_commit_id, branch))
+        err_exit()
+
+    args = {
+        'user': get_current_user(),
+        'branch': branch
+    }
+    cmd = txt_substitute(merge_staging_template, args)
+    file_name = "%s.txt" % (get_qualifier_with_ctx())
+    write_to_file(file_name, cmd)
+    open_file_in_editor(file_name, EDITOR_ATOM)
+
+merge_master_template = """
+git checkout master
+git pull origin master
+git merge origin/topic/{user}/{branch} --no-commit --no-ff
+git commit
+git push
+"""
+def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    # merge to master script:
+    #     1. Check the commit is present in dev/staging
+    #     2. delete and fetch master
+    #     3. Print the command
+
+    branch = arg2
+    if branch is None:
+        print("Need to send branch as parameter")
+        err_exit()
+
+    args = {
+        'user': get_current_user(),
+        'branch': branch
+    }
+    cmd = txt_substitute(merge_master_template, args)
+    file_name = "%s.txt" % (get_qualifier_with_ctx())
+    write_to_file(file_name, cmd)
+    open_file_in_editor(file_name)
 
 def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = arg2
@@ -413,6 +440,23 @@ def open_jira_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #
 #     if open_in_editor:
 #         open_file_in_editor(temp_note_file)
+
+def ensure_commit_hash_has_value(commit_hash_text, key):
+    lines = commit_hash_text.split("\n")
+    filtered_lines = [a.strip() for a in lines if key in a]
+
+    if len(filtered_lines) != 1:
+        print("just 1 entry for key not found in text: %s" % commit_hash_text)
+        err_exit()
+
+    required_line = filtered_lines[0].strip()
+    filtered_text = required_line.replace(key, "")
+    if len(filtered_text) > 0:
+        return
+
+    print("Insufficent entry for : %s" % key)
+    err_exit()
+
 
 def find_ticket(base_dir, ticket_name):
     sub_directores = []
@@ -717,7 +761,7 @@ if __name__ == "__main__":
         get_cmd("shead",    "Save head commit patch to backup.",    "non", shead),
         get_cmd("lhead",    "List file in head commit.",            "non", lhead),
         get_cmd("ob",       "Open Branch",                          "non", open_branch),
-        # get_cmd("ms",       "Merge into staging",                   "non", merge_staging),
+        get_cmd("ms",       "Merge into staging",                   "non", merge_staging),
         # get_cmd("mm",       "Merge into master",                    "non", merge_master),
         get_cmd("url",      "Save url output to file",              "non", save_url),
         get_cmd("curl",     "Save curl output to file",             "non", save_curl),
