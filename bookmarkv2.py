@@ -170,15 +170,20 @@ if __name__ == "__main__":
         open_url_in_browser(links[index], get_params())
         exit()
 
+    print("Nothing found in primary name association, looking for tags..")
+
     if url_id in tag_map:
         first_link_of_tag = tag_map[url_id][0]
         open_url_in_browser(links[first_link_of_tag], get_params())
         exit()
 
+    print("Nothing found in tags association, looking for name prefix..")
 
     prefix_found_for_primary_keys = build_trie_and_execute(primary_keys, url_id)
     if prefix_found_for_primary_keys:
         exit()
+
+    print("Nothing found in name prefix, looking for tag prefix..")
 
     prefix_found_for_tags = build_trie_and_execute(tag_map, url_id)
     if prefix_found_for_tags:

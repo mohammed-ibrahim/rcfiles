@@ -423,6 +423,11 @@ def open_jira_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     jira_url = "%s/jira/browse/%s" % (jira_domain, branch_to_use)
     open_url_in_browser(jira_url)
 
+def open_repository(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    repo_url = get_repo_url()
+    open_url_in_browser(repo_url)
+
+
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
 # |    |   /\   __\  |  | |  \   __<   |  |  /  \ /  \_/ __ \   __\  |  \ /  _ \ / __ |/  ___/
@@ -545,7 +550,7 @@ def read_stdin():
     try:
         return sys.stdin.read()
     except Exception as e:
-        print e.args
+        print(e.args)
         return None
 
 def get_current_user():
@@ -672,7 +677,7 @@ def run_process_and_get_output(command_list, exit_on_failure=False):
     if exit_on_failure and len(err) > 0:
         err_exit()
 
-    return out
+    return out.decode("utf-8")
 
 def err_exit():
     sys.exit(1)
@@ -776,7 +781,8 @@ if __name__ == "__main__":
         get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line),
         get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit),
         get_cmd("en",       "Enlist the branch",                    "non", enlist_branches),
-        get_cmd("t",        "Open Jira Ticket",                     "non", open_jira_ticket)
+        get_cmd("t",        "Open Jira Ticket",                     "non", open_jira_ticket),
+        get_cmd("or",       "Open Repo",                            "non", open_repository)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
