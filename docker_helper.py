@@ -13,9 +13,6 @@ import uuid
 import urllib
 import shlex
 
-PRIORITY_KEYWORDS = [
-    "authcontrol"
-]
 
 def err_exit():
     sys.exit(1)
@@ -55,36 +52,33 @@ def get_required_container_id():
     print("Couldn't find docker name for given folder")
     err_exit()
 
-    # for line in lines:
-    #     parts = line.split(" ")
-    #     container_id = parts[0]
-    #     docker_name = parts[1]
-    #
-    #     for pri_keywords in PRIORITY_KEYWORDS:
-    #         if docker_name.startswith(pri_keywords):
-    #             print("Found docker for: %s" % (docker_name))
-    #             return container_id
-    #
-    #     print("None of dockers found fro keywords: %s" % (",".join(PRIORITY_KEYWORDS)))
-    #     err_exit()
+def as_str(text):
+    if str == type(text):
+        return text
 
-# def interactive_execute(cmd):
-#     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
-#     for stdout_line in iter(popen.stdout.readline, ""):
-#         print(stdout_line)
-#
-#     popen.stdout.close()
-#     return_code = popen.wait()
-#     if return_code:
-#         raise subprocess.CalledProcessError(return_code, cmd)
+    return text.decode("utf-8")
 
+def fetch_all_container_ids():
+    result = as_str(s_run_process_and_get_output("docker ps -q", True))
+    result.strip("\n").strip()
+
+    if len(result) < 1:
+        return []
+
+    return [id for id in result.split("\n") if len(id.strip()) > 0]
+
+def halt_all():
+    all_running_container_ids = fetch_all_container_ids()
+    print("Stopping one by one: %s" % " :: ".join(all_running_container_ids))
+
+    for id in all_running_container_ids:
+        s_run_process_and_get_output("docker stop %s" % id, True)
 
 def get_param(index):
     if len(sys.argv) > index:
         return sys.argv[index]
 
     return None
-
 
 def run_command(command):
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
@@ -98,20 +92,14 @@ def run_command(command):
     return rc
 
 if __name__ == "__main__":
-    container_id = get_required_container_id()
-    print("container id is: %s" % container_id)
 
     param = get_param(1)
 
-
-    if "tailf" == param:
+    if param in ["halt", "h"]:
+        halt_all()
+    elif param in ["log", "logs", "l"]:
+        container_id = get_required_container_id()
         text = "docker logs -f %s" % (container_id)
-        print(text)
-        pyperclip.copy(text)
-        # interactive_execute("docker logs -f %s" % (container_id))
-        # 78f14341566d
-        # interactive_execute("docker logs -f 78f14341566d")
-        # print("uyess")
-    elif param is not None:
-        output = s_run_process_and_get_output("docker %s %s" % (param, container_id))
-        print(output)
+        run_command(text)
+    else:
+        print("Nothing doing...")
