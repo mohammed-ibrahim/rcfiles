@@ -44,11 +44,11 @@ def build_content(lines):
 
     for line in lines:
         if '=' in line:
-            parts = line.split("=")
+            parts = line.split("=", 1)
             if len(parts) > 1:
                 name = parts[0]
                 link = parts[1]
-                buffer[name] = link
+                buffer[name] = {"name": name, "link": link}
 
     return buffer
 
@@ -58,9 +58,9 @@ def search_for_links(term, name_link_map):
 
     for name in name_link_map:
 
-        link = name_link_map[name]
+        link = name_link_map[name]["link"]
         if term in name.lower() or term in link.lower():
-            search_results[str(index)] = link
+            search_results[str(index)] = {"name": name, "link": link}
             index = index + 1
 
     return search_results
@@ -83,8 +83,8 @@ if __name__ == "__main__":
     # data = {'name': 'link', 'name2': 'link2'}
 
     if url_id in name_link_map:
-        print("Opening Link: %s" % name_link_map[url_id])
-        open_url_in_browser(name_link_map[url_id], get_params())
+        print("Opening Link: %s" % name_link_map[url_id]["link"])
+        open_url_in_browser(name_link_map[url_id]["link"], get_params())
         exit()
 
     search_results = search_for_links(url_id, name_link_map)
@@ -94,8 +94,8 @@ if __name__ == "__main__":
         exit()
 
     if len(search_results) == 1:
-        print("Opening Link: %s" % search_results["1"])
-        open_url_in_browser(search_results["1"], get_params())
+        print("Opening Link: %s" % search_results["1"]["link"])
+        open_url_in_browser(search_results["1"]["link"], get_params())
         exit()
 
     # Search results are more than 1, so interactive search.
@@ -107,9 +107,9 @@ if __name__ == "__main__":
     print("Total number of results: %d \n\n" % len(search_results))
     for i in range(len(search_results)):
         index = str(i+1)
-        print("%s - %s" % (index, search_results[index]))
+        print("%s - %s" % (index, search_results[index]["name"]))
 
-    print("hit '0' to quit.\n\n")
+    print("\n\nhit '0' to quit.\n\n")
     user_input = input("Please select file number: ")
     user_input = str(user_input).strip()
 
@@ -121,6 +121,6 @@ if __name__ == "__main__":
         print("%s is not mentioned in the search results." % str(user_input))
         err_exit()
     else:
-        print("Opening Link: %s" % search_results[user_input])
-        open_url_in_browser(search_results[user_input], get_params())
+        print("Opening Link: %s" % search_results[user_input]["link"])
+        open_url_in_browser(search_results[user_input]["link"], get_params())
         exit()
