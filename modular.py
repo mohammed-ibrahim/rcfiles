@@ -103,14 +103,14 @@ def copy_full_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
 def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
-    file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(), get_head_commit_id(), slugify(get_current_branch()))
+    file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, process_diff_file(head_diff))
     pyperclip.copy("vi %s" % file_name)
     # open_file_in_editor(file_name)
 
 def shead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
-    file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(), get_head_commit_id(), slugify(get_current_branch()))
+    file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, head_diff)
     return file_name
 
@@ -127,7 +127,7 @@ def lhead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
             print(line)
         print("\n\n")
 
-    file_name = "%s.diff" % get_qualifier_with_ctx()
+    file_name = "%s.diff" % get_qualifier_with_ctx(env_variables)
     write_to_file(file_name, NEW_LINE.join(all_lines))
     # open_file_in_editor(file_name)
     open_file_in_editor_if_specified(params, file_name)
@@ -195,7 +195,7 @@ def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         'branch': branch
     }
     cmd = txt_substitute(merge_staging_template, args)
-    file_name = "%s.txt" % (get_qualifier_with_ctx())
+    file_name = "%s.txt" % (get_qualifier_with_ctx(env_variables))
     write_to_file(file_name, cmd)
     open_file_in_editor(file_name, EDITOR_ATOM)
 
@@ -222,7 +222,7 @@ def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         'branch': branch
     }
     cmd = txt_substitute(merge_master_template, args)
-    file_name = "%s.txt" % (get_qualifier_with_ctx())
+    file_name = "%s.txt" % (get_qualifier_with_ctx(env_variables))
     write_to_file(file_name, cmd)
     open_file_in_editor(file_name)
 
@@ -232,7 +232,7 @@ def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Need to pass parameter for this command.")
         return
 
-    file_name = get_qualifier_with_custom_ctx("url-save", "txt")
+    file_name = get_qualifier_with_custom_ctx("url-save", "txt", env_variables)
     req = requests.get(url)
     write_to_file(file_name, req.content)
     pyperclip.copy("vi %s" % file_name)
@@ -263,7 +263,7 @@ def save_curl(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Invalid command")
         return
 
-    file_name = get_qualifier_with_custom_ctx("curl-save", extension)
+    file_name = get_qualifier_with_custom_ctx("curl-save", extension, env_variables)
     req = requests.get(url, headers = headers)
     write_to_file(file_name, req.content)
     pyperclip.copy("vi %s" % file_name)
@@ -271,19 +271,19 @@ def save_curl(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
 def save_diff(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     git_diff = s_run_process_and_get_output('git diff')
-    file_name = "%s.diff" % get_qualifier_with_ctx()
+    file_name = "%s.diff" % get_qualifier_with_ctx(env_variables)
     write_to_file(file_name, process_diff_file(git_diff))
     pyperclip.copy("vi %s" % file_name)
     # open_file_in_editor(file_name, EDITOR_VIM)
 
 def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    fully_qualified_path_for_backup = get_qualifier_with_ctx()
+    fully_qualified_path_for_backup = get_qualifier_with_ctx(env_variables)
     pyperclip.copy(fully_qualified_path_for_backup)
     print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
 
 def save_git_status(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     git_diff = s_run_process_and_get_output('git status')
-    file_name = "%s.diff" % get_qualifier_with_ctx()
+    file_name = "%s.diff" % get_qualifier_with_ctx(env_variables)
     write_to_file(file_name, git_diff)
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor(file_name, EDITOR_ATOM)
@@ -295,7 +295,7 @@ def gen_uuid(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
 def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     contents = read_stdin()
-    file_name = "%s.cmd.out.txt" % get_qualifier_with_ctx()
+    file_name = "%s.cmd.out.txt" % get_qualifier_with_ctx(env_variables)
     write_to_file(file_name, contents)
     open_file_in_editor(file_name, EDITOR_ATOM)
 
@@ -427,6 +427,39 @@ def open_repository(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     repo_url = get_repo_url()
     open_url_in_browser(repo_url)
 
+def load_all_mocks(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    url = "http://localhost:1080/mockserver/retrieve?type=ACTIVE_EXPECTATIONS"
+    req = requests.put(url)
+    status_code = req.status_code
+
+    if status_code == 200:
+        data = json.loads(req.content)
+        file_name = "%s.mock.expectations.txt" % get_qualifier_with_ctx(env_variables)
+        write_to_file(file_name, json.dumps(data, indent=4))
+        open_file_in_editor(file_name, EDITOR_ATOM)
+    else:
+        print("There was problem communicating to : %s ::: %s" % (url, req.content))
+
+def copy_amend(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    pyperclip.copy("git commit --amend")
+
+def copy_amend_no_edit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    pyperclip.copy("git commit --amend --no-edit")
+
+def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    branch_to_use = arg2
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
+
+    if branch_to_use is None or branch_to_use.strip() == "":
+        print("Couldn't determine branch")
+        return
+
+    command_output = s_run_process_and_get_output("git log -3 %s" % branch_to_use, exit_on_failure=True)
+    prefix = "rbt post -g -o\nrbt post -r <review-id> <latest-commit-id>\n\n\n"
+    temp_file_name = get_qualifier_with_custom_ctx("temp", "txt", env_variables)
+    write_to_file(temp_file_name, prefix + command_output)
+    open_file_in_editor(temp_file_name, EDITOR_ATOM)
 
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
@@ -575,7 +608,7 @@ def open_file_in_editor(file_name, editor):
         s_run_process_and_get_output("vi %s" % file_name)
 
 
-def get_qualifier_with_ctx():
+def get_qualifier_with_ctx(env_variables):
     # ctx = get_param(2)
     # if ctx is None:
     #     ctx = get_cwd_name()
@@ -586,14 +619,18 @@ def get_qualifier_with_ctx():
     local_directory = env_variables['LOCAL_BACKUP_DIR']
     return os.path.join(local_directory, "%s-%s" % (ctx, get_ts()))
 
-def get_qualifier_with_custom_ctx(ctx, extension):
+def get_qualifier_with_custom_ctx(ctx, extension, env_variables):
     ctx = slugify(ctx)
     local_directory = env_variables['LOCAL_BACKUP_DIR']
     return os.path.join(local_directory, "%s-%s.%s" % (ctx, get_ts(), extension))
 
 def write_to_file(file_name, content):
     with open(file_name, "w") as file_pointer:
-        file_pointer.write(content)
+
+        if type(content) == str:
+            file_pointer.write(content)
+        else:
+            file_pointer.write(content.decode("utf-8"))
 
     print("File write complete: " + file_name)
 
@@ -628,7 +665,7 @@ def get_remote_branch_top_commit_details(branch_name, env_variables):
         data = json.loads(req.content)
         return data
     else:
-        print("There was problem communicating to : %s", gitlab_api)
+        print("There was problem communicating to : %s ::: %s" % (gitlab_api, req.content))
         return None
 
 def get_gitlab_api_project_key():
@@ -637,7 +674,7 @@ def get_gitlab_api_project_key():
     return url_encode(process_output)
 
 def url_encode(s):
-    return urllib.quote_plus(s)
+    return urllib.parse.quote_plus(s)
 
 def get_ts():
     return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
@@ -782,7 +819,11 @@ if __name__ == "__main__":
         get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit),
         get_cmd("en",       "Enlist the branch",                    "non", enlist_branches),
         get_cmd("t",        "Open Jira Ticket",                     "non", open_jira_ticket),
-        get_cmd("or",       "Open Repo",                            "non", open_repository)
+        get_cmd("or",       "Open Repo",                            "non", open_repository),
+        get_cmd("mock",     "Load all mocks",                       "non", load_all_mocks),
+        get_cmd("am",       "Copy the amend code",                  "non", copy_amend),
+        get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit),
+        get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
