@@ -37,8 +37,13 @@ if __name__ == "__main__":
         print("usage: cron_mark_note_tickets_ro.py <tickets-dir>")
         err_exit()
 
+    file_names_to_ignore = [
+        "jwt_helper.py"
+    ]
+
     files = os.listdir(tickets_dir)
     files = [a for a in files if not a.startswith("HW-")]
+    files = [a for a in files if a not in file_names_to_ignore]
 
     for file in files:
         file_path = os.path.join(tickets_dir, file)
