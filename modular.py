@@ -446,6 +446,26 @@ def copy_amend(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 def copy_amend_no_edit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy("git commit --amend --no-edit")
 
+def copy_push_command(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    branch_to_use = arg2
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
+
+    template = "git push origin HEAD:topic/{user}/{branch}"
+    text = txt_substitute(template, {'user': get_current_user(), 'branch': branch_to_use})
+    print("Copied :: " + text)
+    pyperclip.copy(text)
+
+def copy_re_push_command(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    branch_to_use = arg2
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
+
+    template = "git push origin :topic/{user}/{branch} && git push origin HEAD:topic/{user}/{branch}"
+    text = txt_substitute(template, {'user': get_current_user(), 'branch': branch_to_use})
+    print("Copied :: " + text)
+    pyperclip.copy(text)
+
 def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
     if branch_to_use is None:
@@ -823,7 +843,9 @@ if __name__ == "__main__":
         get_cmd("mock",     "Load all mocks",                       "non", load_all_mocks),
         get_cmd("am",       "Copy the amend code",                  "non", copy_amend),
         get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit),
-        get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility)
+        get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility),
+        get_cmd("push",     "Review board utility",                 "non", copy_push_command),
+        get_cmd("rpush",    "Review board utility",                 "non", copy_re_push_command)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
