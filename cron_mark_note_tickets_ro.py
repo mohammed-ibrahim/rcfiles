@@ -38,7 +38,8 @@ if __name__ == "__main__":
         err_exit()
 
     file_names_to_ignore = [
-        "jwt_helper.py"
+        "jwt_helper.py",
+        "trackpad.txt"
     ]
 
     files = os.listdir(tickets_dir)
