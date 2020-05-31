@@ -17,6 +17,19 @@ import urllib
 # \     \___(  <_> )   |  \\___ \  |  |  / __ \|   |  \  |  \___ \
 #  \______  /\____/|___|  /____  > |__| (____  /___|  /__| /____  >
 #         \/            \/     \/            \/     \/          \/
+
+class Timer():
+
+    _start_time = None
+    def __init__(self):
+        self._start_time = datetime.datetime.now()
+
+    def end(self):
+        end_time = datetime.datetime.now()
+        delta = end_time - self._start_time
+        return str(delta)
+
+
 NEW_LINE = "\n"
 IGNORE_OPEN_EDITOR = "--ignore-open-editor"
 EDITOR_ATOM = "atom"
@@ -446,25 +459,51 @@ def copy_amend(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 def copy_amend_no_edit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy("git commit --amend --no-edit")
 
-def copy_push_command(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    branch_to_use = arg2
-    if branch_to_use is None:
-        branch_to_use = get_current_branch()
 
-    template = "git push origin HEAD:topic/{user}/{branch}"
-    text = txt_substitute(template, {'user': get_current_user(), 'branch': branch_to_use})
-    print("Copied :: " + text)
-    pyperclip.copy(text)
+def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    """
+    1. Ensure that it is not staging or master branch
+    2. Ensure there are no diffs
+    3. Ensure no staged files for commit
+    4. Check whether remote branch exists
+    """
 
-def copy_re_push_command(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    branch_to_use = arg2
-    if branch_to_use is None:
-        branch_to_use = get_current_branch()
+    timer = Timer()
+    branch_to_use = get_current_branch()
 
-    template = "git push origin :topic/{user}/{branch} && git push origin HEAD:topic/{user}/{branch}"
-    text = txt_substitute(template, {'user': get_current_user(), 'branch': branch_to_use})
-    print("Copied :: " + text)
-    pyperclip.copy(text)
+    if branch_to_use in ["master", "dev/staging", "staging"]:
+        print("Cannot auto push to this branch: " + branch_to_use)
+        err_exit()
+
+    git_diff = s_run_process_and_get_output('git diff')
+    if len(git_diff.strip()) > 0:
+        print("Code diff is present plz check before pushing")
+        err_exit()
+
+    stage_files = s_run_process_and_get_output('git diff --name-only --cached')
+    if len(stage_files.strip()) > 0:
+        print("There are staged files present")
+        err_exit()
+
+    remote_branch_details = get_remote_branch_top_commit_details(branch_to_use, env_variables)
+    output = "None"
+
+    delete_template = "git push origin :topic/{user}/{branch}"
+    delete_command = txt_substitute(delete_template, {'user': get_current_user(), 'branch': branch_to_use})
+
+    push_template = "git push origin HEAD:topic/{user}/{branch}"
+    push_command = txt_substitute(push_template, {'user': get_current_user(), 'branch': branch_to_use})
+
+    if remote_branch_details is None:
+        # Only Push
+        output = s_run_process_and_get_output(push_command)
+    else:
+        # Delete and push
+        output1 = s_run_process_and_get_output(delete_command)
+        output2 = s_run_process_and_get_output(push_command)
+        output = output1 + "\n\n\n" + output2
+
+    print("Command output: %s \n\n\nTime taken: %s" % (output, timer.end()))
 
 def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
@@ -844,8 +883,7 @@ if __name__ == "__main__":
         get_cmd("am",       "Copy the amend code",                  "non", copy_amend),
         get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit),
         get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility),
-        get_cmd("push",     "Review board utility",                 "non", copy_push_command),
-        get_cmd("rpush",    "Review board utility",                 "non", copy_re_push_command)
+        get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]

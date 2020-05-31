@@ -94,7 +94,7 @@ def restart_container(search_text):
         return
 
     container_id = get_container_id_by_filter(search_text)
-    cmd = "docker stop %s" % container_id
+    cmd = "docker restart %s" % container_id
     s_run_process_and_get_output(cmd)
 
 def display_docker_ps():
