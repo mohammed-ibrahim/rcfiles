@@ -498,6 +498,9 @@ def is_safe_to_amend():
 
 def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
     timer = Timer()
+
+    print("Merging %s into %s" % (source_branch_name, target_branch_name))
+
     if source_branch_name == target_branch_name:
         print("Cannot merge: %s into: %s" % (source_branch_name, target_branch_name))
         err_exit()
@@ -523,6 +526,8 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
         print("Local commit: %s Remote commit: %s differ for branch: %s" % (source_branch_local_commmit_id, source_branch_remote_commit_id, source_branch_name))
         err_exit()
 
+    print("Commit id matches remote and local for branch: %s commit: %s" % (source_branch_name, source_branch_remote_commit_id))
+
     s_run_process_and_get_output('git checkout ' + target_branch_name)
     s_run_process_and_get_output('git pull')
     s_run_process_and_get_output('git pull origin ' + target_branch_name)
@@ -531,15 +536,17 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
     target_branch_local_commit_id = get_head_commit_for_branch(target_branch_name)
     target_branch_remote_commit_details = get_remote_branch_top_commit_details(target_branch_name, env_variables)
     if target_branch_remote_commit_details is None:
-        print("There was an error fetching remote branch details: branch: %s" % branch)
+        print("There was an error fetching remote branch details: branch: %s" % target_branch_name)
         err_exit()
 
     target_branch_remote_commit_id = target_branch_remote_commit_details['id']
-    title = target_branch_remote_commit_details['title']
+    #title = target_branch_remote_commit_details['title']
 
     if target_branch_local_commit_id != target_branch_remote_commit_id:
         print("Local commit: %s Remote commit: %s differ for branch: %s" % (target_branch_local_commit_id, target_branch_remote_commit_id, target_branch_name))
         err_exit()
+
+    print("Commit id matches remote and local for branch: %s commit: %s" % (target_branch_name, target_branch_remote_commit_id))
 
     merge_command_template = "git merge origin/topic/{user}/{branch} --no-ff"
     merge_command = txt_substitute(merge_command_template, {'user': get_current_user(), 'branch': source_branch_name})
