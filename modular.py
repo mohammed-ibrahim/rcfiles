@@ -166,79 +166,6 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
     open_url_in_browser(required_url)
 
-merge_staging_template = """
-git checkout dev/staging
-git pull origin dev/staging
-git merge origin/topic/{user}/{branch} --no-commit --no-ff
-git commit
-git push
-"""
-def merge_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    # merge to staging script:
-    #     1. Check local commit has all the entries
-    #     2. Check local commit is up to date with remote commit
-    #     3. delete and fetch dev/staging
-    #     4. Print the command on the screen
-
-
-    branch = arg2
-    if branch is None:
-        print("Need to send branch as parameter")
-        err_exit()
-
-    commit_hash_text = s_run_process_and_get_output("git log -1 %s" % branch, exit_on_failure=True)
-    ensure_commit_hash_has_value(commit_hash_text, "Reviewed by:")
-    ensure_commit_hash_has_value(commit_hash_text, "Review URL:")
-    ensure_commit_hash_has_value(commit_hash_text, "Bug Number:")
-
-    head_commit_id = get_head_commit_for_branch(branch)
-    remote_commit_id_details = get_remote_branch_top_commit_details(branch, env_variables)
-    if remote_commit_id_details is None:
-        print("There was an error fetching remote branch details: branch: %s" % branch)
-        err_exit()
-
-    remote_commit_id = remote_commit_id_details['id']
-
-    if head_commit_id != remote_commit_id:
-        print("Local commit doesn't match remote commit: local commit: %s remote commit: %s branch: %s" % (head_commit_id, remote_commit_id, branch))
-        err_exit()
-
-    args = {
-        'user': get_current_user(),
-        'branch': branch
-    }
-    cmd = txt_substitute(merge_staging_template, args)
-    file_name = "%s.txt" % (get_qualifier_with_ctx(env_variables))
-    write_to_file(file_name, cmd)
-    open_file_in_editor(file_name, EDITOR_ATOM)
-
-merge_master_template = """
-git checkout master
-git pull origin master
-git merge origin/topic/{user}/{branch} --no-commit --no-ff
-git commit
-git push
-"""
-def merge_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    # merge to master script:
-    #     1. Check the commit is present in dev/staging
-    #     2. delete and fetch master
-    #     3. Print the command
-
-    branch = arg2
-    if branch is None:
-        print("Need to send branch as parameter")
-        err_exit()
-
-    args = {
-        'user': get_current_user(),
-        'branch': branch
-    }
-    cmd = txt_substitute(merge_master_template, args)
-    file_name = "%s.txt" % (get_qualifier_with_ctx(env_variables))
-    write_to_file(file_name, cmd)
-    open_file_in_editor(file_name)
-
 def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = arg2
     if url is None:
@@ -454,9 +381,11 @@ def load_all_mocks(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("There was problem communicating to : %s ::: %s" % (url, req.content))
 
 def copy_amend(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    is_safe_to_amend()
     pyperclip.copy("git commit --amend")
 
 def copy_amend_no_edit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    is_safe_to_amend()
     pyperclip.copy("git commit --amend --no-edit")
 
 
@@ -505,6 +434,17 @@ def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables)
 
     print("Command output: %s \n\n\nTime taken: %s" % (output, timer.end()))
 
+
+def merge_to_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    source_branch_name = arg2
+    target_branch_name = 'dev/staging'
+    resolve_pre_merge(source_branch_name, target_branch_name, env_variables)
+
+def merge_to_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    source_branch_name = arg2
+    target_branch_name = 'master'
+    resolve_pre_merge(source_branch_name, target_branch_name, env_variables)
+
 def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
     if branch_to_use is None:
@@ -537,6 +477,74 @@ def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #
 #     if open_in_editor:
 #         open_file_in_editor(temp_note_file)
+
+def is_safe_to_amend():
+    branch_to_use = get_current_branch()
+    if branch_to_use in ["master", "dev/staging", "staging"]:
+        print("cannot amend to this branch: " + branch_to_use)
+        err_exit()
+
+    git_diff = s_run_process_and_get_output('git diff')
+    if len(git_diff.strip()) > 0:
+        print("cannot amend when there is diff")
+        err_exit()
+
+    stage_files = s_run_process_and_get_output('git diff --name-only --cached')
+    if len(stage_files.strip()) < 1:
+        print("Nothing to amend")
+        err_exit()
+
+    return True
+
+def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
+    timer = Timer()
+    if source_branch_name == target_branch_name:
+        print("Cannot merge: %s into: %s" % (source_branch_name, target_branch_name))
+        err_exit()
+
+    if source_branch_name is None:
+        print("Branch name is necessary to merge")
+        err_exit()
+
+    if source_branch_name in ["master", "dev/staging", "staging"]:
+        print("This cannot be source branch: " + source_branch_name)
+        err_exit()
+
+    source_branch_local_commmit_id = get_head_commit_for_branch(source_branch_name)
+    source_branch_remote_commit_details = get_remote_branch_top_commit_details(source_branch_name, env_variables)
+
+    if source_branch_remote_commit_details is None:
+        print("Destination branch doesnt exists: " + source_branch_name)
+        err_exit()
+
+    source_branch_remote_commit_id = source_branch_remote_commit_details['id']
+
+    if source_branch_local_commmit_id != source_branch_remote_commit_id:
+        print("Local commit: %s Remote commit: %s differ for branch: %s" % (source_branch_local_commmit_id, source_branch_remote_commit_id, source_branch_name))
+        err_exit()
+
+    s_run_process_and_get_output('git checkout ' + target_branch_name)
+    s_run_process_and_get_output('git pull')
+    s_run_process_and_get_output('git pull origin ' + target_branch_name)
+    s_run_process_and_get_output('git pull')
+
+    target_branch_local_commit_id = get_head_commit_for_branch(target_branch_name)
+    target_branch_remote_commit_details = get_remote_branch_top_commit_details(target_branch_name, env_variables)
+    if target_branch_remote_commit_details is None:
+        print("There was an error fetching remote branch details: branch: %s" % branch)
+        err_exit()
+
+    target_branch_remote_commit_id = target_branch_remote_commit_details['id']
+    title = target_branch_remote_commit_details['title']
+
+    if target_branch_local_commit_id != target_branch_remote_commit_id:
+        print("Local commit: %s Remote commit: %s differ for branch: %s" % (target_branch_local_commit_id, target_branch_remote_commit_id, target_branch_name))
+        err_exit()
+
+    merge_command_template = "git merge origin/topic/{user}/{branch} --no-ff"
+    merge_command = txt_substitute(merge_command_template, {'user': get_current_user(), 'branch': source_branch_name})
+    pyperclip.copy(merge_command)
+    print("Copyed to the clipboard: %s time taken: %s" % (merge_command, timer.end()))
 
 def ensure_commit_hash_has_value(commit_hash_text, key):
     lines = commit_hash_text.split("\n")
@@ -708,7 +716,14 @@ def get_head_commit_for_branch(branch_name):
     return commit_id
 
 def get_remote_branch_top_commit_details(branch_name, env_variables):
-    remote_branch = "topic/%s/%s" % (get_current_user(), branch_name)
+
+    remote_branch = None
+    if branch_name in ['master', 'staging']:
+        remote_branch = branch_name
+    elif branch_name == 'dev/staging':
+        remote_branch = 'dev/staging'
+    else:
+        remote_branch = "topic/%s/%s" % (get_current_user(), branch_name)
 
     gitlab_domain = env_variables['GITLAB_DOMAIN']
     gitlab_api_key = env_variables['GITLAB_API_KEY']
@@ -862,8 +877,6 @@ if __name__ == "__main__":
         get_cmd("shead",    "Save head commit patch to backup.",    "non", shead),
         get_cmd("lhead",    "List file in head commit.",            "non", lhead),
         get_cmd("ob",       "Open Branch",                          "non", open_branch),
-        get_cmd("ms",       "Merge into staging",                   "non", merge_staging),
-        # get_cmd("mm",       "Merge into master",                    "non", merge_master),
         get_cmd("url",      "Save url output to file",              "non", save_url),
         get_cmd("curl",     "Save curl output to file",             "non", save_curl),
         get_cmd("diff",     "Save git diff",                        "non", save_diff),
@@ -883,7 +896,9 @@ if __name__ == "__main__":
         get_cmd("am",       "Copy the amend code",                  "non", copy_amend),
         get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit),
         get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility),
-        get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch)
+        get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch),
+        get_cmd("merge-stg","Merge to Staging",                     "non", merge_to_staging),
+        get_cmd("merge-master","Merge to Master",                   "non", merge_to_master)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
