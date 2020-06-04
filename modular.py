@@ -404,16 +404,7 @@ def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables)
         print("Cannot auto push to this branch: " + branch_to_use)
         err_exit()
 
-    git_diff = s_run_process_and_get_output('git diff')
-    if len(git_diff.strip()) > 0:
-        print("Code diff is present plz check before pushing")
-        err_exit()
-
-    stage_files = s_run_process_and_get_output('git diff --name-only --cached')
-    if len(stage_files.strip()) > 0:
-        print("There are staged files present")
-        err_exit()
-
+    ensure_no_git_diff_or_staged_files_present()
     remote_branch_details = get_remote_branch_top_commit_details(branch_to_use, env_variables)
     output = "None"
 
@@ -444,6 +435,49 @@ def merge_to_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     source_branch_name = arg2
     target_branch_name = 'master'
     resolve_pre_merge(source_branch_name, target_branch_name, env_variables)
+
+def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    """
+    0. Ensure that there are no diff's and staged items
+    1. Ensure that branch is not already existing
+    2. Checkout master and pull master
+    3. Verify local commit and remote commit are same for master branch
+    4. Create branch out of master
+    5. Ensure that tracking is updated
+    """
+
+    branch_to_use = arg2
+    if branch_to_use is None:
+        print("Need to supply branch as param for this operation")
+        err_exit()
+
+    ensure_not_a_protected_branch(branch_to_use)
+    ensure_no_git_diff_or_staged_files_present()
+    cmd_output = s_run_process_and_get_output('git branch')
+
+    if branch_to_use in cmd_output:
+        print("Branch already present please delete and restart: " + branch_to_use)
+        err_exit()
+
+    master_branch_name = 'master'
+    checkout_and_pull_branch(master_branch_name)
+
+    local_commmit_id = get_head_commit_for_branch(master_branch_name)
+    remote_commit_details = get_remote_branch_top_commit_details(master_branch_name, env_variables)
+
+    if remote_commit_details is None:
+        print("Destination branch doesnt exists: " + master_branch_name)
+        err_exit()
+
+    remote_commit_id = remote_commit_details['id']
+
+    if local_commmit_id != remote_commit_id:
+        print("Local commit: %s Remote commit: %s differ for branch: %s" % (master_branch_name, source_branch_remote_commit_id, source_branch_name))
+        err_exit()
+
+    s_run_process_and_get_output('git checkout -b %s' % branch_to_use)
+    s_run_process_and_get_output('git branch --set-upstream-to=origin/master %s' % branch_to_use)
+    print("Branch: %s is ready." % branch_to_use)
 
 def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
@@ -477,6 +511,38 @@ def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #
 #     if open_in_editor:
 #         open_file_in_editor(temp_note_file)
+
+
+def ensure_not_a_protected_branch(branch_to_use):
+    if branch_to_use in ["master", "dev/staging", "staging"]:
+        print("This is a protected branch: " + branch_to_use)
+        err_exit()
+
+    return None
+
+def ensure_no_git_diff_or_staged_files_present():
+    ensure_no_git_diff_present()
+    ensure_no_staged_file_present()
+    return None
+
+def ensure_no_git_diff_present():
+    git_diff = s_run_process_and_get_output('git diff')
+
+    if len(git_diff.strip()) > 0:
+        print("Current branch not clean - Diff Present")
+        err_exit()
+
+    return None
+
+def ensure_no_staged_file_present():
+    stage_files = s_run_process_and_get_output('git diff --name-only --cached')
+
+    if len(stage_files.strip()) > 0:
+        print("Current branch not clean - Staged files present")
+        err_exit()
+
+    return None
+
 
 def is_safe_to_amend():
     branch_to_use = get_current_branch()
@@ -527,11 +593,14 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
         err_exit()
 
     print("Commit id matches remote and local for branch: %s commit: %s" % (source_branch_name, source_branch_remote_commit_id))
+    source_branch_title = source_branch_remote_commit_details['title']
+    user_input = input("Remote change are related to ::: %s ::: Are you sure you want to continue (y/n)?" % source_branch_title)
 
-    s_run_process_and_get_output('git checkout ' + target_branch_name)
-    s_run_process_and_get_output('git pull')
-    s_run_process_and_get_output('git pull origin ' + target_branch_name)
-    s_run_process_and_get_output('git pull')
+    if user_input != 'y':
+        print("Exiting the operation")
+        err_exit()
+
+    checkout_and_pull_branch(target_branch_name)
 
     target_branch_local_commit_id = get_head_commit_for_branch(target_branch_name)
     target_branch_remote_commit_details = get_remote_branch_top_commit_details(target_branch_name, env_variables)
@@ -552,6 +621,12 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
     merge_command = txt_substitute(merge_command_template, {'user': get_current_user(), 'branch': source_branch_name})
     pyperclip.copy(merge_command)
     print("Copyed to the clipboard: %s time taken: %s" % (merge_command, timer.end()))
+
+def checkout_and_pull_branch(branch_name):
+    s_run_process_and_get_output('git checkout ' + branch_name)
+    s_run_process_and_get_output('git pull')
+    s_run_process_and_get_output('git pull origin ' + branch_name)
+    s_run_process_and_get_output('git pull')
 
 def ensure_commit_hash_has_value(commit_hash_text, key):
     lines = commit_hash_text.split("\n")
@@ -905,7 +980,8 @@ if __name__ == "__main__":
         get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility),
         get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch),
         get_cmd("merge-stg","Merge to Staging",                     "non", merge_to_staging),
-        get_cmd("merge-master","Merge to Master",                   "non", merge_to_master)
+        get_cmd("merge-master","Merge to Master",                   "non", merge_to_master),
+        get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
