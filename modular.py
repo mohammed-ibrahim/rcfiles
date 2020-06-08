@@ -161,9 +161,13 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     if current_branch is None:
         current_branch = get_current_branch()
 
-    current_user_details = s_run_process_and_get_output("whoami")
-    current_user = current_user_details.split(NEW_LINE)[0]
-    required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
+    required_url = None
+    if current_branch in ["master", "dev/staging"]:
+        required_url = "%s/commits/%s" % (get_repo_url(), current_branch)
+    else:
+        current_user = get_current_user()
+        required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
+
     open_url_in_browser(required_url)
 
 def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
