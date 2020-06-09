@@ -87,9 +87,8 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Couldn't determine branch")
         return
 
-    local_directory = env_variables['TICKETS_DIR']
-    ticket_name = "%s.txt" % (slugify_c(branch_to_use))
-    file_identifier = os.path.join(local_directory, ticket_name)
+    # local_directory = env_variables['TICKETS_DIR']
+    # ticket_name = "%s.txt" % (slugify_c(branch_to_use))
 
     variables = {
         'repo_url': get_repo_url(),
@@ -145,16 +144,16 @@ def lhead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     # open_file_in_editor(file_name)
     open_file_in_editor_if_specified(params, file_name)
 
-def git_copy(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    process_output = s_run_process_and_get_output('git status')
-    lines = process_output.split(NEW_LINE)
-    tabbed_lines = [line[1:] for line in lines if line.startswith("\t")]
-    filtered_lines = [line for line in tabbed_lines if len(line.strip()) > 0]
-    modified = "modified:   "
-    if "-m" in params:
-        filtered_lines = [line for line in filtered_lines if modified in line]
-    filtered_lines = [line.replace(modified, "") for line in filtered_lines]
-    pyperclip.copy(" ".join(filtered_lines))
+# def git_copy(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+#     process_output = s_run_process_and_get_output('git status')
+#     lines = process_output.split(NEW_LINE)
+#     tabbed_lines = [line[1:] for line in lines if line.startswith("\t")]
+#     filtered_lines = [line for line in tabbed_lines if len(line.strip()) > 0]
+#     modified = "modified:   "
+#     if "-m" in params:
+#         filtered_lines = [line for line in filtered_lines if modified in line]
+#     filtered_lines = [line.replace(modified, "") for line in filtered_lines]
+#     pyperclip.copy(" ".join(filtered_lines))
 
 def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     current_branch = arg2
@@ -220,17 +219,17 @@ def save_diff(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy("vi %s" % file_name)
     # open_file_in_editor(file_name, EDITOR_VIM)
 
-def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    fully_qualified_path_for_backup = get_qualifier_with_ctx(env_variables)
-    pyperclip.copy(fully_qualified_path_for_backup)
-    print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
+# def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+#     fully_qualified_path_for_backup = get_qualifier_with_ctx(env_variables)
+#     pyperclip.copy(fully_qualified_path_for_backup)
+#     print("\n\n%s - copied to clipboard\n\n" % fully_qualified_path_for_backup)
 
-def save_git_status(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    git_diff = s_run_process_and_get_output('git status')
-    file_name = "%s.diff" % get_qualifier_with_ctx(env_variables)
-    write_to_file(file_name, git_diff)
-    pyperclip.copy("vi %s" % file_name)
-    open_file_in_editor(file_name, EDITOR_ATOM)
+# def save_git_status(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+#     git_diff = s_run_process_and_get_output('git status')
+#     file_name = "%s.diff" % get_qualifier_with_ctx(env_variables)
+#     write_to_file(file_name, git_diff)
+#     pyperclip.copy("vi %s" % file_name)
+#     open_file_in_editor(file_name, EDITOR_ATOM)
 
 def gen_uuid(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     ustr = str(uuid.uuid4())
@@ -243,17 +242,17 @@ def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     write_to_file(file_name, contents)
     open_file_in_editor(file_name, EDITOR_ATOM)
 
-def reduce_filenames(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    contents = read_stdin()
-    lines = contents.split(NEW_LINE)
-    filtered = [line.split("/") for line in lines if "/" in line]
-    filtered = [parts[-1] for parts in filtered]
-
-    if len(filtered) > 0:
-        for file in filtered:
-            print(file)
-    else:
-        print("No filenames in buffer")
+# def reduce_filenames(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+#     contents = read_stdin()
+#     lines = contents.split(NEW_LINE)
+#     filtered = [line.split("/") for line in lines if "/" in line]
+#     filtered = [parts[-1] for parts in filtered]
+#
+#     if len(filtered) > 0:
+#         for file in filtered:
+#             print(file)
+#     else:
+#         print("No filenames in buffer")
 
 def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
@@ -330,33 +329,6 @@ def compare_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     text = txt_substitute(CTC_TEMPLATE, variables)
     print(text)
 
-
-def enlist_branches(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    branch_to_use = arg2
-    if branch_to_use is not None:
-        top_commit_details = get_remote_branch_top_commit_details(branch_to_use, env_variables)
-        if top_commit_details is not None:
-            print("\n\n%s - %s\n\n" % (branch_to_use, top_commit_details['title']))
-        else:
-            print("Failed to fetch branch details")
-
-        sys.exit(0)
-
-    text = s_run_process_and_get_output("git branch")
-    lines = text.split("\n")
-    lines = [a[2:] for a in lines if len(a.strip()) > 0]
-    branches = [a for a in lines if a not in ['master', 'dev/staging']]
-
-    buffer = []
-    index = 1
-    for branch in branches:
-        top_commit_details = get_remote_branch_top_commit_details(branch, env_variables)
-        if top_commit_details is not None:
-            buffer.append("%s - %s" % (branch.ljust(30), top_commit_details['title']))
-
-    print("\n\n----------------------------------------------------------------")
-    print("\n".join(buffer))
-    print("----------------------------------------------------------------\n\n")
 
 def open_jira_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
@@ -476,7 +448,7 @@ def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     remote_commit_id = remote_commit_details['id']
 
     if local_commmit_id != remote_commit_id:
-        print("Local commit: %s Remote commit: %s differ for branch: %s" % (master_branch_name, source_branch_remote_commit_id, source_branch_name))
+        print("Local commit: %s Remote commit: %s differ for branch: %s" % (local_commmit_id, remote_commit_id, master_branch_name))
         err_exit()
 
     s_run_process_and_get_output('git checkout -b %s' % branch_to_use)
@@ -522,12 +494,9 @@ def ensure_not_a_protected_branch(branch_to_use):
         print("This is a protected branch: " + branch_to_use)
         err_exit()
 
-    return None
-
 def ensure_no_git_diff_or_staged_files_present():
     ensure_no_git_diff_present()
     ensure_no_staged_file_present()
-    return None
 
 def ensure_no_git_diff_present():
     git_diff = s_run_process_and_get_output('git diff')
@@ -536,17 +505,12 @@ def ensure_no_git_diff_present():
         print("Current branch not clean - Diff Present")
         err_exit()
 
-    return None
-
 def ensure_no_staged_file_present():
     stage_files = s_run_process_and_get_output('git diff --name-only --cached')
 
     if len(stage_files.strip()) > 0:
         print("Current branch not clean - Staged files present")
         err_exit()
-
-    return None
-
 
 def is_safe_to_amend():
     branch_to_use = get_current_branch()
@@ -948,7 +912,7 @@ def get_params():
 
 if __name__ == "__main__":
 
-    env_variables = {
+    environment_variables = {
         'LOCAL_BACKUP_DIR': pull_env_var('LOCAL_BACKUP_DIR'),
         'TICKETS_DIR': pull_env_var('TICKETS_DIR'),
         'GITLAB_DOMAIN': pull_env_var('GITLAB_DOMAIN'),
@@ -966,16 +930,16 @@ if __name__ == "__main__":
         get_cmd("url",      "Save url output to file",              "non", save_url),
         get_cmd("curl",     "Save curl output to file",             "non", save_curl),
         get_cmd("diff",     "Save git diff",                        "non", save_diff),
-        get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp),
-        get_cmd("gs",       "Save git status to file",              "non", save_git_status),
+        # get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp),
+        # get_cmd("gs",       "Save git status to file",              "non", save_git_status),
         get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid),
         get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open),
-        get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy),
-        get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames),
+        # get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy),
+        # get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames),
         get_cmd("o",        "Open branch specifiec file",           "branch_name" , open_branch_ticket),
         get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line),
         get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit),
-        get_cmd("en",       "Enlist the branch",                    "non", enlist_branches),
+        # get_cmd("en",       "Enlist the branch",                    "non", enlist_branches),
         get_cmd("t",        "Open Jira Ticket",                     "non", open_jira_ticket),
         get_cmd("or",       "Open Repo",                            "non", open_repository),
         get_cmd("mock",     "Load all mocks",                       "non", load_all_mocks),
@@ -983,7 +947,7 @@ if __name__ == "__main__":
         get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit),
         get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility),
         get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch),
-        get_cmd("merge-stg","Merge to Staging",                     "non", merge_to_staging),
+        get_cmd("merge-staging","Merge to Staging",                     "non", merge_to_staging),
         get_cmd("merge-master","Merge to Master",                   "non", merge_to_master),
         get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master)
     ]
@@ -997,4 +961,4 @@ if __name__ == "__main__":
     index = primary_operation_codes.index(mode)
     arg = primary_operations[index]
     fn = arg['fnc']
-    fn(get_params(), get_param(2), get_param(3), None, None, None, env_variables)
+    fn(get_params(), get_param(2), get_param(3), None, None, None, environment_variables)
