@@ -40,7 +40,7 @@ def s_run_process_and_get_output(s_cmd, exit_on_failure=False):
 def unlock_file(file_path):
     s_run_process_and_get_output("chmod 0666 %s" % file_path)
 
-def interactive_unlock(files, tickets_directory, pattern):
+def interactive_unlock(files, info_source_directory, pattern):
     map = {}
     index = 1
     for file in files:
@@ -64,22 +64,22 @@ def interactive_unlock(files, tickets_directory, pattern):
         print("Option %s not mentioned in the list above" % user_input)
         err_exit()
     else:
-        unlock_file(os.path.join(tickets_directory, map[user_input]))
+        unlock_file(os.path.join(info_source_directory, map[user_input]))
     # TODO: start from here.
 
 if __name__ == "__main__":
-    tickets_directory = pull_env_var('TICKETS_DIR')
+    info_source_directory = pull_env_var('INFO_SOURCE_DIRECTORY')
     param = get_param(1)
 
-    files_in_ticket_dir = fetch_file_names_in_dir(tickets_directory)
+    files_in_ticket_dir = fetch_file_names_in_dir(info_source_directory)
 
     if param is not None:
         # full path is mentioned
         if os.path.isfile(param):
             unlock_file(param)
         elif param in files_in_ticket_dir:
-            unlock_file(os.path.join(tickets_directory, param))
+            unlock_file(os.path.join(info_source_directory, param))
         else:
-            interactive_unlock(files_in_ticket_dir, tickets_directory, param)
+            interactive_unlock(files_in_ticket_dir, info_source_directory, param)
     else:
-        interactive_unlock(files_in_ticket_dir, tickets_directory, None)
+        interactive_unlock(files_in_ticket_dir, info_source_directory, None)

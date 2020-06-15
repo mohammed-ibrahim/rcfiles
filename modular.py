@@ -87,7 +87,7 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Couldn't determine branch")
         return
 
-    # local_directory = env_variables['TICKETS_DIR']
+    # local_directory = env_variables['INFO_SOURCE_DIRECTORY']
     # ticket_name = "%s.txt" % (slugify_c(branch_to_use))
 
     variables = {
@@ -263,9 +263,9 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Couldn't determine branch")
         return
 
-    local_directory = env_variables['TICKETS_DIR']
+    info_source_directory = env_variables['INFO_SOURCE_DIRECTORY']
     ticket_name = "%s.txt" % (slugify_c(branch_to_use))
-    file_identifier = os.path.join(local_directory, ticket_name)
+    file_identifier = os.path.join(info_source_directory, ticket_name)
 
     variables = {
         'repo_url': get_repo_url(),
@@ -914,7 +914,7 @@ if __name__ == "__main__":
 
     environment_variables = {
         'LOCAL_BACKUP_DIR': pull_env_var('LOCAL_BACKUP_DIR'),
-        'TICKETS_DIR': pull_env_var('TICKETS_DIR'),
+        'INFO_SOURCE_DIRECTORY': pull_env_var('INFO_SOURCE_DIRECTORY'),
         'GITLAB_DOMAIN': pull_env_var('GITLAB_DOMAIN'),
         'GITLAB_API_KEY':  pull_env_var('GITLAB_API_KEY'),
         'JIRA_DOMAIN': pull_env_var('JIRA_DOMAIN')

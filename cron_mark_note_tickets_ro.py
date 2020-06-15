@@ -31,10 +31,10 @@ def get_param(index):
     return None
 
 if __name__ == "__main__":
-    tickets_dir = get_param(1)
+    info_source_directory = get_param(1)
 
-    if tickets_dir is None:
-        print("usage: cron_mark_note_tickets_ro.py <tickets-dir>")
+    if info_source_directory is None:
+        print("usage: %s.py <tickets-dir>" % __name__)
         err_exit()
 
     file_names_to_ignore = [
@@ -42,12 +42,12 @@ if __name__ == "__main__":
         "trackpad.txt", "tasks.txt"
     ]
 
-    files = os.listdir(tickets_dir)
+    files = os.listdir(info_source_directory)
     files = [a for a in files if not a.startswith("HW-")]
     files = [a for a in files if a not in file_names_to_ignore]
 
     for file in files:
-        file_path = os.path.join(tickets_dir, file)
+        file_path = os.path.join(info_source_directory, file)
         if is_file_writable(file_path):
             mark_file_readonly(file_path)
         else:
