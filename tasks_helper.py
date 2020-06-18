@@ -434,7 +434,6 @@ def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Branch already present please delete and restart: " + branch_to_use)
         err_exit()
 
-    err_exit() # TODO: delete this line
     master_branch_name = 'master'
     checkout_and_pull_branch(master_branch_name)
 
