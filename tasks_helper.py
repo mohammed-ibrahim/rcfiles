@@ -428,12 +428,13 @@ def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     ensure_not_a_protected_branch(branch_to_use)
     ensure_no_git_diff_or_staged_files_present()
-    cmd_output = s_run_process_and_get_output('git branch')
+    branch_list = get_locally_listed_branches()
 
-    if branch_to_use in cmd_output:
+    if branch_to_use in branch_list:
         print("Branch already present please delete and restart: " + branch_to_use)
         err_exit()
 
+    err_exit() # TODO: delete this line
     master_branch_name = 'master'
     checkout_and_pull_branch(master_branch_name)
 
@@ -487,6 +488,13 @@ def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #     if open_in_editor:
 #         open_file_in_editor(temp_note_file)
 
+
+def get_locally_listed_branches():
+    cmd_output = s_run_process_and_get_output('git branch')
+    lines = cmd_output.split("\n")
+    lines = [x for x in lines if len(x.strip()) > 0]
+    lines = [x[2:] for x in lines]
+    print(lines)
 
 def ensure_not_a_protected_branch(branch_to_use):
     if branch_to_use in ["master", "dev/staging", "staging"]:
