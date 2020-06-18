@@ -373,7 +373,6 @@ def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables)
     4. Check whether remote branch exists
     """
 
-    timer = Timer()
     branch_to_use = get_current_branch()
 
     if branch_to_use in ["master", "dev/staging", "staging"]:
@@ -399,7 +398,7 @@ def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables)
         output2 = s_run_process_and_get_output(push_command)
         output = output1 + "\n\n\n" + output2
 
-    print("Command output: %s \n\n\nTime taken: %s" % (output, timer.end()))
+    print("Command output: %s" % (output))
 
 
 def merge_to_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -531,7 +530,6 @@ def is_safe_to_amend():
     return True
 
 def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
-    timer = Timer()
 
     print("Merging %s into %s" % (source_branch_name, target_branch_name))
 
@@ -588,7 +586,7 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
     merge_command_template = "git merge origin/topic/{user}/{branch} --no-ff"
     merge_command = txt_substitute(merge_command_template, {'user': get_current_user(), 'branch': source_branch_name})
     pyperclip.copy(merge_command)
-    print("Copyed to the clipboard: %s time taken: %s" % (merge_command, timer.end()))
+    print("Copyed to the clipboard: %s" % (merge_command))
 
 def checkout_and_pull_branch(branch_name):
     s_run_process_and_get_output('git checkout ' + branch_name)
@@ -874,12 +872,13 @@ def get_current_branch():
     current_branch = marked_branches[0]
     return parse_branch_name_from_current_git_branch(current_branch)
 
-def get_cmd(code, desc, options, fnc):
+def get_cmd(code, desc, options, fnc, include_timer_in_logs):
     return {
         "code": code,
         "desc": desc,
         "options": options,
-        "fnc": fnc
+        "fnc": fnc,
+        "include_timer_in_logs": include_timer_in_logs
     }
 
 def display_primary_operations(primary_operations):
@@ -921,35 +920,35 @@ if __name__ == "__main__":
     }
 
     primary_operations = [
-        get_cmd("ub",       "Update Branch Commands.",              "non", update_branch),
-        get_cmd("j",        "Copy full branch for Jenkins Command",                  "non", copy_full_branch),
-        get_cmd("head",     "Save head commit & Open in editor.",   "non", head),
-        get_cmd("shead",    "Save head commit patch to backup.",    "non", shead),
-        get_cmd("lhead",    "List file in head commit.",            "non", lhead),
-        get_cmd("ob",       "Open Branch",                          "non", open_branch),
-        get_cmd("url",      "Save url output to file",              "non", save_url),
-        get_cmd("curl",     "Save curl output to file",             "non", save_curl),
-        get_cmd("diff",     "Save git diff",                        "non", save_diff),
-        # get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp),
-        # get_cmd("gs",       "Save git status to file",              "non", save_git_status),
-        get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid),
-        get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open),
-        # get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy),
-        # get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames),
-        get_cmd("o",        "Open branch specifiec file",           "branch_name" , open_branch_ticket),
-        get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line),
-        get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit),
-        # get_cmd("en",       "Enlist the branch",                    "non", enlist_branches),
-        get_cmd("t",        "Open Jira Ticket",                     "non", open_jira_ticket),
-        get_cmd("or",       "Open Repo",                            "non", open_repository),
-        get_cmd("mock",     "Load all mocks",                       "non", load_all_mocks),
-        get_cmd("am",       "Copy the amend code",                  "non", copy_amend),
-        get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit),
-        get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility),
-        get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch),
-        get_cmd("merge-staging","Merge to Staging",                     "non", merge_to_staging),
-        get_cmd("merge-master","Merge to Master",                   "non", merge_to_master),
-        get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master)
+        get_cmd("ub",       "Update Branch Commands.",              "non", update_branch, False),
+        get_cmd("j",        "Copy full branch for Jenkins Command",                  "non", copy_full_branch, True),
+        get_cmd("head",     "Save head commit & Open in editor.",   "non", head, False),
+        get_cmd("shead",    "Save head commit patch to backup.",    "non", shead, False),
+        get_cmd("lhead",    "List file in head commit.",            "non", lhead, False),
+        get_cmd("ob",       "Open Branch",                          "non", open_branch, False),
+        get_cmd("url",      "Save url output to file",              "non", save_url, False),
+        get_cmd("curl",     "Save curl output to file",             "non", save_curl, False),
+        get_cmd("diff",     "Save git diff",                        "non", save_diff, False),
+        # get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp, False),
+        # get_cmd("gs",       "Save git status to file",              "non", save_git_status, False),
+        get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid, True),
+        get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open, False),
+        # get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy, False),
+        # get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames, False),
+        get_cmd("o",        "Open branch specifiec file",           "branch_name", open_branch_ticket, False),
+        get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line, False),
+        get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit, False),
+        # get_cmd("en",       "Enlist the branch",                    "non", enlist_branches, False),
+        get_cmd("t",        "Open Jira Ticket",                     "non", open_jira_ticket, False),
+        get_cmd("or",       "Open Repo",                            "non", open_repository, False),
+        get_cmd("mock",     "Load all mocks",                       "non", load_all_mocks, False),
+        get_cmd("am",       "Copy the amend code",                  "non", copy_amend, False),
+        get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit, False),
+        get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility, False),
+        get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch, False),
+        get_cmd("merge-staging","Merge to Staging",                     "non", merge_to_staging, True),
+        get_cmd("merge-master","Merge to Master",                   "non", merge_to_master, True),
+        get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master, True)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
@@ -961,4 +960,13 @@ if __name__ == "__main__":
     index = primary_operation_codes.index(mode)
     arg = primary_operations[index]
     fn = arg['fnc']
+    include_timer_in_logs = arg['include_timer_in_logs']
+
+    timer = None
+    if include_timer_in_logs:
+        timer = Timer()
+
     fn(get_params(), get_param(2), get_param(3), None, None, None, environment_variables)
+
+    if timer is not None:
+        print("\n\nTask: %s Time: %s\n\n" % (arg['code'], timer.end()))
