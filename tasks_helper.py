@@ -493,7 +493,7 @@ def get_locally_listed_branches():
     lines = cmd_output.split("\n")
     lines = [x for x in lines if len(x.strip()) > 0]
     lines = [x[2:] for x in lines]
-    print(lines)
+    return lines
 
 def ensure_not_a_protected_branch(branch_to_use):
     if branch_to_use in ["master", "dev/staging", "staging"]:
