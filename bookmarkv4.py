@@ -65,10 +65,19 @@ def search_for_links(term, name_link_map):
 
     return search_results
 
+def pull_env_var(key):
+    env_value = os.environ.get(key, None)
+    if env_value is None:
+        print("%s environment variable is not set" % key)
+        sys.exit(1)
+
+    return env_value
+
 if __name__ == "__main__":
 
     arg1 = get_param(1)
-    bookmarks_file = os.path.join(os.environ.get("HOME"), ".bookmarksv4.txt")
+    info_source_directory = pull_env_var('INFO_SOURCE_DIRECTORY')
+    bookmarks_file = os.path.join(info_source_directory, "bookmarks.txt")
     bookmark_contents = read_file_contents(bookmarks_file)
     lines = bookmark_contents.split(NEW_LINE)
     lines = [line for line in lines if len(line.strip()) > 0]
