@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     file_names_to_ignore = [
         "jwt_helper.py",
-        "trackpad.txt", "tasks.txt", "bookmarks.txt"
+        "trackpad.txt", "tasks.txt", "bookmarks.txt", "workitems.rtf", "branch-information.txt"
     ]
 
     files = os.listdir(info_source_directory)
