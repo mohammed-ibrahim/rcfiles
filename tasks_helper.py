@@ -946,7 +946,7 @@ if __name__ == "__main__":
         get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line, False),
         get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit, False),
         # get_cmd("en",       "Enlist the branch",                    "non", enlist_branches, False),
-        get_cmd("t",        "Open Jira Ticket",                     "non", open_jira_ticket, False),
+        get_cmd("jira",     "Open Jira Ticket",                     "non", open_jira_ticket, False),
         get_cmd("or",       "Open Repo",                            "non", open_repository, False),
         get_cmd("mock",     "Load all mocks",                       "non", load_all_mocks, False),
         get_cmd("am",       "Copy the amend code",                  "non", copy_amend, False),

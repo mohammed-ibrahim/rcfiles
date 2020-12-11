@@ -30,6 +30,14 @@ def get_param(index):
 
     return None
 
+def pull_env_var(key):
+    env_value = os.environ.get(key, None)
+    if env_value is None:
+        print("%s environment variable is not set" % key)
+        err_exit()
+
+    return env_value
+
 if __name__ == "__main__":
     info_source_directory = get_param(1)
 
@@ -37,14 +45,12 @@ if __name__ == "__main__":
         print("usage: %s.py <tickets-dir>" % __name__)
         err_exit()
 
-    file_names_to_ignore = [
-        "jwt_helper.py",
-        "trackpad.txt", "tasks.txt", "bookmarks.txt", "workitems.rtf", "branch-information.txt"
-    ]
+    files_to_exclude_csv = pull_env_var('EXCLUDE_RO_FILENAME_CSV')
+    file_names_to_ignore = files_to_exclude_csv.lower().split(",")
 
     files = os.listdir(info_source_directory)
     files = [a for a in files if not a.startswith("HW-")]
-    files = [a for a in files if a not in file_names_to_ignore]
+    files = [a for a in files if a.lower() not in file_names_to_ignore]
 
     for file in files:
         file_path = os.path.join(info_source_directory, file)
