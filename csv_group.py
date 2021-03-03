@@ -1,6 +1,6 @@
 import csv
 import sys
-
+from operator import itemgetter
 
 # def group_data(data, headers, group_by_column):
 #     grouped = {}
@@ -21,7 +21,11 @@ def getPercentage(total, current):
     result = (float(current) * 100.00) / float(total)
     return round(result, 2)
 
-def print_grouped_data(grouped_data):
+def print_grouped_data(grouped_data, num_columns):
+
+    grouped_data = sorted(grouped_data, key=lambda data_row: data_row[num_columns-1], reverse=True)
+    # sorted(grouped_data, key=itemgetter(num_columns-1))
+
     for row in grouped_data:
         row_data = list()
         total_columns = len(row)
@@ -65,7 +69,7 @@ def group_csv(csv_file_name, grouping_columns):
             result_row.append(getPercentage(total_rows, count))
             results.append(result_row)
 
-        print_grouped_data(results)
+        print_grouped_data(results, len(grouping_columns) + 2)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
