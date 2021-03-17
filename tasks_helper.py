@@ -379,7 +379,9 @@ def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables)
         print("Cannot auto push to this branch: " + branch_to_use)
         err_exit()
 
-    ensure_no_git_diff_or_staged_files_present()
+    if "-f" != arg2:
+        ensure_no_git_diff_or_staged_files_present()
+
     remote_branch_details = get_remote_branch_top_commit_details(branch_to_use, env_variables)
     output = "None"
 
