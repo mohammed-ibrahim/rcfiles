@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta
 import urllib.parse
 import urllib
-
+import pagerduty_json_csv
 
 def pull_env_var(key):
     env_value = os.environ.get(key, None)
@@ -57,28 +57,34 @@ def get_pagerduty_timeformat(targetDateTime):
 #     headers = " -H ".join(headers)
 #     print(command.format(method=method, headers=headers, data=data, uri=uri))
 
-def request_pagerduty_events(startTime, endTime, service_id, offset, limit, pagerduty_user_token):
+def request_pagerduty_events(startTime, endTime, service_ids_list, offset, limit, pagerduty_user_token):
 
     query_parameters = {
         "limit": limit,
-        "service_ids[]": service_id,
+        # "service_ids[]": service_id,
         # "service_ids[]": ",".join(service_ids_list),
         "time_zone": "UTC",
+        "total": True,
         "since": get_pagerduty_timeformat(startTime),
         "until": get_pagerduty_timeformat(endTime),
         "offset": offset
     }
+
+    query_buf = []
+    for service_id in service_ids_list:
+        query_buf.append("service_ids%5B%5D=" + service_id)
+
     payload_str = urllib.parse.urlencode(query_parameters)
+    service_id_query = "&".join(query_buf)
+    print(service_id_query)
 
     response = requests.get("https://api.pagerduty.com/incidents",
-                            params=payload_str,
+                            params=payload_str + "&" + service_id_query,
                             headers=get_headers(pagerduty_user_token))
-
-    # print_curl_version(response)
 
     if response.status_code == 200:
         # TODO: remove the sleep from here
-        time.sleep(2)
+        time.sleep(0.5)
         # print(response.content)
         return response.content
 
@@ -91,20 +97,20 @@ def write_to_file(file_name, content):
 
     print("File write complete: " + file_name)
 
-def pull_pagerduty_events(startTime, endTime, service_id, pagerduty_user_token, json_drop_directory):
+def pull_pagerduty_events(startTime, endTime, service_ids_list, pagerduty_user_token, json_drop_directory):
     hasMoreEvents = True
     offset = 0
     limit = 50
     while hasMoreEvents:
         print("Requesting with offset: " + str(offset))
         raw_response = request_pagerduty_events(startTime=startTime, endTime=endTime,
-                                            service_id=service_id, offset=offset,
+                                            service_ids_list=service_ids_list, offset=offset,
                                             limit=limit, pagerduty_user_token=pagerduty_user_token)
 
         response = json.loads(raw_response)
         offset = offset + limit
         hasMoreEvents = response['more']
-        file_name = os.path.join(json_drop_directory, "%s-%d.json" % (service_id, offset))
+        file_name = os.path.join(json_drop_directory, "%s-%d.json" % ("events", offset))
         write_to_file(file_name=file_name, content=json.dumps(response, indent=4))
 
 if __name__ == "__main__":
@@ -130,10 +136,9 @@ if __name__ == "__main__":
     total_services = len(service_ids_list)
     current = 0
 
-    for service_id in service_ids_list:
-        pull_pagerduty_events(startTime=startTime,endTime=endTime,
-                              service_id=service_id,
-                              pagerduty_user_token=pagerduty_user_token,
-                              json_drop_directory=drop_directory)
-        current += 1
-        print("Done: %d total: %d" % (current, total_services))
+    pull_pagerduty_events(startTime=startTime,endTime=endTime,
+                          service_ids_list=service_ids_list,
+                          pagerduty_user_token=pagerduty_user_token,
+                          json_drop_directory=drop_directory)
+
+    pagerduty_json_csv.process_directory(drop_directory)
