@@ -29,8 +29,11 @@ def string_to_date(dateInString):
     return datetime.strptime(dateInString, DATE_FORMAT)
 
 
-def generate_new_id():
-    return str(uuid.uuid4())
+def generate_new_id(alarms_directory):
+    while True:
+        small_uuid = str(uuid.uuid4())[:4]
+        if not alarm_with_id_exists(small_uuid, alarms_directory):
+            return small_uuid
 
 
 """
@@ -68,31 +71,45 @@ trigger_at: <date>
 completed: true/false
 title: <string>
 id: <string>
+notifications_time: []
 """
 
+ALARM_CREATED_AT = "created_at"
+ALARM_TRIGGER_AT = "created_at"
+ALARM_TITLE = "title"
+ALARM_ID = "id"
+ALARM_STATUS = "status"
+ALARM_NOTIFICATION_TIMES = "notification_times"
 
-def create_alarm_json(alarm_time, alarm_title):
+ALARM_STATUS_ACTIVE = "active"
+ALARM_STATUS_CLOSED = "closed"
+
+
+def create_alarm_json(alarm_time, alarm_title, alarms_directory):
     return {
-        "created_at": date_to_string(datetime.now()),
-        "trigger_at": date_to_string(alarm_time),
-        "title": alarm_title,
-        "id": str(uuid.uuid4()),
-        "status": "active"
+        ALARM_CREATED_AT: date_to_string(datetime.now()),
+        ALARM_TRIGGER_AT: date_to_string(alarm_time),
+        ALARM_TITLE: alarm_title,
+        ALARM_ID: generate_new_id(alarms_directory),
+        ALARM_STATUS: ALARM_STATUS_ACTIVE,
+        ALARM_NOTIFICATION_TIMES: []
     }
 
 
-def write_to_file(file_name, content):
-    with open(file_name, "w") as file_pointer:
-        file_pointer.write(content)
+def alarm_with_id_exists(id, alarms_directory):
+    file = get_file_path_from_id(id, alarms_directory)
+    return os.path.isfile(file)
 
-    print("File write complete: " + file_name)
+
+def get_file_path_from_id(alarm_id, alarms_directory):
+    return os.path.join(alarms_directory, alarm_id + ".json")
 
 
 def create_alarm(alarm_time, alarm_title, alarms_directory):
-    alarm_data = create_alarm_json(alarm_time, alarm_title)
-    alarm_id = alarm_data['id']
-    file_path = os.path.join(alarms_directory, alarm_id + ".json")
-    write_to_file(file_path, json.dumps(alarm_data, indent=4))
+    alarm_data = create_alarm_json(alarm_time, alarm_title, alarms_directory)
+    alarm_id = alarm_data[ALARM_ID]
+    file_path = get_file_path_from_id(alarm_id, alarms_directory)
+    common_utils.write_to_file(file_path, json.dumps(alarm_data, indent=4))
     print("Successfully created: " + alarm_id)
 
 
@@ -127,6 +144,112 @@ def create_in_alarm(params, arg1, arg2, alarms_directory):
     create_alarm(alarm_time, " ".join(params[1:]), alarms_directory)
 
 
+def create_at_alarm(params, arg1, arg2, alarms_directory):
+    if arg1 is None:
+        print("Invalid time specified")
+        sys.exit(1)
+
+    if arg2 is None:
+        print("Alarm title is required")
+        sys.exit(1)
+
+    arg1 = arg1.replace(".", ":").replace("-", ":")
+    parts = arg1.split(":")
+    if len(parts) != 2:
+        raise Exception("Format expected like 15.40")
+
+    hours = int(parts[0])
+    minutes = int(parts[1])
+
+    alarm_time = datetime.now().replace(hour=hours, minute=minutes)
+    current_time = datetime.now()
+
+    if alarm_time < current_time:
+        alarm_time = alarm_time + timedelta(hours=24)
+
+    create_alarm(alarm_time, " ".join(params[1:]), alarms_directory)
+
+
+def delete_alarm(params, arg1, arg2, alarms_directory):
+    if arg1 is None:
+        print("Invalid id specified")
+        sys.exit(1)
+
+    full_path = get_file_path_from_id(arg1, alarms_directory)
+    file_exists = os.path.isfile(full_path)
+    if file_exists:
+        os.remove(full_path)
+    else:
+        print("No such alarm: " + full_path)
+
+
+def get_all_alarms(alarms_directory):
+    json_files = [f for f in os.listdir(reminder_files_directory) if
+                  (os.path.isfile(os.path.join(reminder_files_directory, f)) and f.endswith(".json"))]
+
+    return load_json_files(reminder_files_directory, json_files)
+
+
+def check_whether_alarm_needs_to_be_triggered(alarm_data):
+    alarm_id = alarm_data[ALARM_ID]
+    if alarm_data[ALARM_STATUS] == ALARM_STATUS_CLOSED:
+        print("alarm already closed: " + alarm_id)
+        return False
+
+    if len(alarm_data[ALARM_NOTIFICATION_TIMES]) > 2:
+        print("alarm notified more than twice: " + alarm_id)
+        return False
+
+    trigger_at = string_to_date(alarm_data[ALARM_TRIGGER_AT])
+    current_time = datetime.now()
+
+    if trigger_at >= current_time:
+        print("time not arrived yet: " + alarm_id)
+        return False
+
+    print("Yes can be triggered: " + alarm_id)
+    return True
+
+
+COMMAND_SYNTAX = 'terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute \'%s %s close %s\''
+
+
+def update_alarm_notification(alarm_data, alarms_directory):
+    notification_time = date_to_string(datetime.now())
+    alarm_data[ALARM_NOTIFICATION_TIMES].append(notification_time)
+    alarm_id = alarm_data[ALARM_ID]
+    file_path = get_file_path_from_id(alarm_id, alarms_directory)
+    common_utils.write_to_file(file_path, json.dumps(alarm_data, indent=4))
+    print("Successfully updated: " + alarm_id)
+
+
+def fire_alarm(alarm_data, alarms_directory):
+    python_exec_path = common_utils.pull_env_var("PYTHON_EXEC_PATH")
+    full_path_of_current_file = os.path.abspath(__file__)
+    title = alarm_data[ALARM_TITLE]
+    command = COMMAND_SYNTAX % (
+    title, "Click to Close the Alarm", "Reminder", python_exec_path, full_path_of_current_file, alarm_data[ALARM_ID])
+    print("Executing: " + command)
+    os.system(command)
+    update_alarm_notification(alarm_data, alarms_directory)
+
+
+def bot_notify(params, arg1, arg2, alarms_directory):
+    active_alarms = []
+    alarms_on_disk = get_all_alarms(alarms_directory)
+
+    for alarm_on_disk in alarms_on_disk:
+        alarm_needs_to_be_triggered = check_whether_alarm_needs_to_be_triggered(alarm_on_disk)
+        if alarm_needs_to_be_triggered:
+            active_alarms.append(alarm_on_disk)
+
+    if len(active_alarms) < 1:
+        return
+
+    for active_alarm in active_alarms:
+        fire_alarm(active_alarm, alarms_directory)
+
+
 def display_primary_operations(primary_operations):
     primary_operation_codes = [x['code'] for x in primary_operations]
     print("usage: :: a [%s]" % (",".join(primary_operation_codes)))
@@ -137,16 +260,12 @@ def display_primary_operations(primary_operations):
 if __name__ == "__main__":
     reminder_files_directory = common_utils.pull_env_var("REMINDERS_DROP_DIR")
 
-    json_files = [f for f in os.listdir(reminder_files_directory) if
-                  (os.path.isfile(os.path.join(reminder_files_directory, f)) and f.endswith(".json"))]
-
-    alarm_jsons = load_json_files(reminder_files_directory, json_files)
-
     primary_operations = [
-        get_cmd("in", "Create reminder in [10min, 10m, 1h, 5h, 6hours, 11hour].", create_in_alarm)]
-    # get_cmd("at", "Create reminder in 10.45 am|pm.", create_at_alarm),
-    # get_cmd("delete", "delete alarms", delete_alarms),
-    # get_cmd("display", "Save head commit & Open in editor.", display_alarms),
+        get_cmd("in", "Create reminder in [10min, 10m, 1h, 5h, 6hours, 11hour].", create_in_alarm),
+        get_cmd("at", "Create reminder in 10.45 am|pm.", create_at_alarm),
+        get_cmd("delete", "delete alarms", delete_alarm),
+        get_cmd("bot_notify", "bot notify", bot_notify)]
+    # get_cmd("display", "Save head commit & Open in editor.", display_alarms)]
     # get_cmd("bot_notify", "Should be used by cron/bot to check and display notification if required.", notify_if_required)]
 
     primary_operation_codes = [x['code'] for x in primary_operations]

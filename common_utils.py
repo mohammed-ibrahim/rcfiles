@@ -36,3 +36,10 @@ def get_params():
         cmd = sys.argv[i]
         cmd_list.append(cmd)
     return cmd_list
+
+
+def write_to_file(file_name, content):
+    with open(file_name, "w") as file_pointer:
+        file_pointer.write(content)
+
+    print("File write complete: " + file_name)
