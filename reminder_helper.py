@@ -108,7 +108,7 @@ def get_file_path_from_id(alarm_id):
 def create_alarm(alarm_time, alarm_title):
     alarm_data = create_alarm_json(alarm_time, alarm_title)
     alarm_id = alarm_data[ALARM_ID]
-    save_alarm(json.dumps(alarm_data, indent=4))
+    save_alarm(alarm_data)
     print("Successfully created: " + alarm_id)
 
 
@@ -154,11 +154,11 @@ def create_at_alarm(params, arg1, arg2):
 
     arg1 = arg1.replace(".", ":").replace("-", ":")
     parts = arg1.split(":")
-    if len(parts) != 2:
+    if len(parts) < 1:
         raise Exception("Format expected like 15.40")
 
     hours = int(parts[0])
-    minutes = int(parts[1])
+    minutes = int(parts[1]) if len(parts) == 2 else 0
 
     alarm_time = datetime.now().replace(hour=hours, minute=minutes)
     current_time = datetime.now()
@@ -184,7 +184,7 @@ def delete_alarm(params, arg1, arg2):
 
 def save_alarm(alarm_data):
     alarm_id = alarm_data[ALARM_ID]
-    file_path = get_file_path_from_id(alarm_id, get_alarms_directory())
+    file_path = get_file_path_from_id(alarm_id)
     common_utils.write_to_file(file_path, json.dumps(alarm_data, indent=4))
     print("Successfully persisted alarm: " + alarm_id)
 
@@ -219,7 +219,7 @@ def get_all_alarms():
     json_files = [f for f in os.listdir(alarms_directory) if
                   (os.path.isfile(os.path.join(alarms_directory, f)) and f.endswith(".json"))]
 
-    return load_json_files(alarms_directory, json_files)
+    return load_json_files(json_files)
 
 
 def check_whether_alarm_needs_to_be_triggered(alarm_data):
@@ -272,7 +272,7 @@ def bot_notify(params, arg1, arg2):
         return
 
     for active_alarm in active_alarms:
-        fire_alarm(active_alarm, get_alarms_directory())
+        fire_alarm(active_alarm)
 
 
 def display_primary_operations(primary_operations):
@@ -304,4 +304,4 @@ if __name__ == "__main__":
     arg = primary_operations[index]
     fn = arg['fnc']
 
-    fn(common_utils.get_params(), common_utils.get_param(2), common_utils.get_param(3), reminder_files_directory)
+    fn(common_utils.get_params(), common_utils.get_param(2), common_utils.get_param(3))
