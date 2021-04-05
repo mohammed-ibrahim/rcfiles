@@ -5,7 +5,9 @@ import sys
 import uuid
 from datetime import datetime, timedelta
 import common_utils
+from pathlib import Path
 
+CONFIG_DATA = None
 
 def load_json_files(json_files):
     data = []
@@ -211,7 +213,7 @@ def close_alarm(params, arg1, arg2):
 
 
 def get_alarms_directory():
-    return common_utils.pull_env_var("REMINDERS_DROP_DIR")
+    return CONFIG_DATA['REMINDERS_DROP_DIR']
 
 
 def get_all_alarms():
@@ -232,6 +234,18 @@ def check_whether_alarm_needs_to_be_triggered(alarm_data):
         print("alarm notified more than twice: " + alarm_id)
         return False
 
+    if len(alarm_data[ALARM_NOTIFICATION_TIMES]) > 0:
+        last_notification_time_text = alarm_data[ALARM_NOTIFICATION_TIMES][-1]
+        last_notification_time = string_to_date(last_notification_time_text)
+        current_time = datetime.now()
+        snooze_period = last_notification_time + timedelta(minutes=30)
+        if current_time > snooze_period:
+            print("Snooze period complete: " + alarm_data[ALARM_ID])
+            return True
+        else:
+            print("Snooze period not complete yet: " + alarm_data[ALARM_ID])
+            return False
+
     trigger_at = string_to_date(alarm_data[ALARM_TRIGGER_AT])
     current_time = datetime.now()
 
@@ -247,7 +261,7 @@ COMMAND_SYNTAX = 'terminal-notifier -title "%s" -subtitle "%s" -message "%s" -ex
 
 
 def fire_alarm(alarm_data):
-    python_exec_path = common_utils.pull_env_var("PYTHON_EXEC_PATH")
+    python_exec_path = CONFIG_DATA["PYTHON_EXEC_PATH"]
     full_path_of_current_file = os.path.abspath(__file__)
     title = alarm_data[ALARM_TITLE]
     command = COMMAND_SYNTAX % (
@@ -283,7 +297,10 @@ def display_primary_operations(primary_operations):
 
 
 if __name__ == "__main__":
-    reminder_files_directory = common_utils.pull_env_var("REMINDERS_DROP_DIR")
+    common_credentials_file_path = os.path.join(str(Path.home()), ".common.creds.json")
+    config_data_content = common_utils.read_file_contents(common_credentials_file_path)
+    # global CONFIG_DATA
+    CONFIG_DATA = json.loads(config_data_content)
 
     primary_operations = [
         get_cmd("in", "Create reminder in [10min, 10m, 1h, 5h, 6hours, 11hour].", create_in_alarm),
