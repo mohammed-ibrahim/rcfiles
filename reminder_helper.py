@@ -32,10 +32,20 @@ def string_to_date(dateInString):
 
 
 def generate_new_id():
-    while True:
-        small_uuid = str(uuid.uuid4())[:4]
-        if not alarm_with_id_exists(small_uuid):
-            return small_uuid
+    alarms_directory = get_alarms_directory()
+    filtered_list = [int(f[:-5]) for f in os.listdir(alarms_directory) if
+                     (os.path.isfile(os.path.join(alarms_directory, f)) and f.endswith(".json") and f[:-5].isdigit())]
+
+    if len(filtered_list) < 1:
+        return "1"
+
+    next_number = max(filtered_list) + 1
+    return str(next_number)
+
+    # while True:
+    #     small_uuid = str(uuid.uuid4())[:4]
+    #     if not alarm_with_id_exists(small_uuid):
+    #         return small_uuid
 
 
 """
@@ -98,9 +108,9 @@ def create_alarm_json(alarm_time, alarm_title):
     }
 
 
-def alarm_with_id_exists(id):
-    file = get_file_path_from_id(id)
-    return os.path.isfile(file)
+# def alarm_with_id_exists(id):
+#     file = get_file_path_from_id(id)
+#     return os.path.isfile(file)
 
 
 def get_file_path_from_id(alarm_id):
@@ -257,7 +267,7 @@ def check_whether_alarm_needs_to_be_triggered(alarm_data):
     return True
 
 
-COMMAND_SYNTAX = 'terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute \'%s %s close %s\''
+COMMAND_SYNTAX = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute \'%s %s close %s\''
 
 
 def fire_alarm(alarm_data):
@@ -265,7 +275,7 @@ def fire_alarm(alarm_data):
     full_path_of_current_file = os.path.abspath(__file__)
     title = alarm_data[ALARM_TITLE]
     command = COMMAND_SYNTAX % (
-    title, "Click to Close the Alarm", "Reminder", python_exec_path, full_path_of_current_file, alarm_data[ALARM_ID])
+    title, "Click to Close (%s)" % alarm_data[ALARM_ID], "Reminder", python_exec_path, full_path_of_current_file, alarm_data[ALARM_ID])
     print("Executing: " + command)
     os.system(command)
     notification_time = date_to_string(datetime.now())
