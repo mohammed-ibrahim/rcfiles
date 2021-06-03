@@ -403,6 +403,11 @@ def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables)
     print("Command output: %s" % (output))
 
 
+def coverity_push_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    print("git push origin :topic/coverity &&")
+    print("git push origin HEAD:topic/coverity")
+
+
 def merge_to_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     source_branch_name = arg2
     target_branch_name = 'dev/staging'
@@ -775,7 +780,7 @@ def get_head_commit_for_branch(branch_name):
 def get_remote_branch_top_commit_details(branch_name, env_variables):
 
     remote_branch = None
-    if branch_name in ['master', 'staging']:
+    if branch_name in ['master']:
         remote_branch = branch_name
     elif branch_name == 'dev/staging':
         remote_branch = 'dev/staging'
@@ -955,6 +960,7 @@ if __name__ == "__main__":
         get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit, False),
         get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility, False),
         get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch, True),
+        get_cmd("cov",      "Coverity-push-helper",                 "non", coverity_push_helper, True),
         get_cmd("merge-staging","Merge to Staging",                     "non", merge_to_staging, True),
         get_cmd("merge-master","Merge to Master",                   "non", merge_to_master, True),
         get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master, True)

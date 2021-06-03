@@ -222,6 +222,20 @@ def close_alarm(params, arg1, arg2):
     save_alarm(alarm_data)
 
 
+def list_alarms(params, arg1, arg2):
+    alarms_on_disk = get_all_alarms()
+
+    show_all = True if arg1 == "-a" else False
+
+    for alarm_on_disk in alarms_on_disk:
+        num_notifications = len(alarm_on_disk[ALARM_NOTIFICATION_TIMES])
+        display_name = alarm_on_disk[ALARM_TITLE][:45]
+        alarm_status = alarm_on_disk[ALARM_STATUS]
+
+        if alarm_status == ALARM_STATUS_ACTIVE or show_all:
+            print(display_name.ljust(50) + " :: " + alarm_status + " :: Notifications: " + str(num_notifications))
+
+
 def get_alarms_directory():
     return CONFIG_DATA['REMINDERS_DROP_DIR']
 
@@ -317,6 +331,7 @@ if __name__ == "__main__":
         get_cmd("at", "Create reminder in 10.45 am|pm.", create_at_alarm),
         get_cmd("delete", "delete alarms", delete_alarm),
         get_cmd("close", "close alarms", close_alarm),
+        get_cmd("list", "list alarms", list_alarms),
         get_cmd("bot_notify", "bot notify", bot_notify)]
     # get_cmd("display", "Save head commit & Open in editor.", display_alarms)]
     # get_cmd("bot_notify", "Should be used by cron/bot to check and display notification if required.", notify_if_required)]
