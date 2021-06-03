@@ -14,7 +14,7 @@ def load_json_files(json_files):
 
     for json_file in json_files:
         full_path = os.path.join(get_alarms_directory(), json_file)
-        print("Attempting to load: " + json_file)
+        # print("Attempting to load: " + json_file)
         data.append(json.loads(common_utils.read_file_contents(full_path)))
 
     return data
@@ -227,14 +227,32 @@ def list_alarms(params, arg1, arg2):
 
     show_all = True if arg1 == "-a" else False
 
+    disp = "\n%s :: %s :: %s :: %s" % ("ID".ljust(10), "Action".ljust(50), "Status".ljust(20), "Num Notified".ljust(10))
+    print(disp)
+
+    total_active = 0
+    total_closed = 0
+
     for alarm_on_disk in alarms_on_disk:
         num_notifications = len(alarm_on_disk[ALARM_NOTIFICATION_TIMES])
+        alarm_id = alarm_on_disk[ALARM_ID]
         display_name = alarm_on_disk[ALARM_TITLE][:45]
         alarm_status = alarm_on_disk[ALARM_STATUS]
+        alarm_is_active = True if (alarm_status == ALARM_STATUS_ACTIVE and num_notifications < 2) else False
 
-        if alarm_status == ALARM_STATUS_ACTIVE or show_all:
-            print(display_name.ljust(50) + " :: " + alarm_status + " :: Notifications: " + str(num_notifications))
+        if alarm_is_active:
+            total_active = total_active + 1
+        else:
+            total_closed = total_closed + 1
 
+        if alarm_is_active or show_all:
+            disp = "%s :: %s :: %s :: %s" % (alarm_id.ljust(10), display_name.ljust(50), alarm_status.ljust(20), str(num_notifications).ljust(10))
+            print(disp)
+
+    print("\n\n")
+    print("Total Active: " + str(total_active))
+    print("Total Closed: " + str(total_closed))
+    print("\n")
 
 def get_alarms_directory():
     return CONFIG_DATA['REMINDERS_DROP_DIR']
@@ -339,7 +357,8 @@ if __name__ == "__main__":
     primary_operation_codes = [x['code'] for x in primary_operations]
     mode = common_utils.get_param(1)
     if mode is None or mode not in primary_operation_codes:
-        display_primary_operations(primary_operations)
+        # display_primary_operations(primary_operations)
+        list_alarms(common_utils.get_params(), common_utils.get_param(2), common_utils.get_param(3))
         common_utils.err_exit()
 
     index = primary_operation_codes.index(mode)
