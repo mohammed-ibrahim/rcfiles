@@ -1,4 +1,5 @@
 import subprocess
+import docker
 import json
 import os
 import sys
@@ -460,6 +461,41 @@ def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     s_run_process_and_get_output('git checkout -b %s' % branch_to_use)
     s_run_process_and_get_output('git branch --set-upstream-to=origin/master %s' % branch_to_use)
     print("Branch: %s is ready." % branch_to_use)
+
+
+DOCKER_FORMAT = """
+docker exec -it %s /bin/bash
+docker logs %s
+docker logs -f %s
+docker logs %s 2>&1 > ~/out.txt
+"""
+
+def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    if arg2 is None:
+        print("Please supply keyword to search")
+        err_exit()
+
+    client = docker.from_env()
+    containers = client.containers.list()
+
+    if len(containers) < 1:
+        print("None of the containers are running")
+        err_exit()
+
+    keyword = arg2
+    short_id = None
+    for c in containers:
+        if (keyword in c.id) or (keyword in c.name) or (keyword in c.image):
+            short_id = c.short_id
+            break
+
+
+    if short_id is None:
+        print("Nothing found for the keyword: " + keyword)
+        err_exit()
+
+    print(DOCKER_FORMAT % (short_id, short_id, short_id, short_id))
+
 
 def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
@@ -963,7 +999,8 @@ if __name__ == "__main__":
         get_cmd("cov",      "Coverity-push-helper",                 "non", coverity_push_helper, True),
         get_cmd("merge-staging","Merge to Staging",                     "non", merge_to_staging, True),
         get_cmd("merge-master","Merge to Master",                   "non", merge_to_master, True),
-        get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master, True)
+        get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master, True),
+        get_cmd("dock",      "docker helper",     "non",                   docker_helper, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]

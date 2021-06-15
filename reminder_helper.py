@@ -227,8 +227,10 @@ def list_alarms(params, arg1, arg2):
 
     show_all = True if arg1 == "-a" else False
 
-    disp = "\n%s :: %s :: %s :: %s" % ("ID".ljust(10), "Action".ljust(50), "Status".ljust(20), "Num Notified".ljust(10))
+    disp = "%s :: %s :: %s :: %s" % ("ID".ljust(10), "Action".ljust(50), "Status".ljust(20), "Num Notified".ljust(10))
+    print("-" * 104)
     print(disp)
+    print("-" * 104)
 
     total_active = 0
     total_closed = 0
@@ -249,10 +251,10 @@ def list_alarms(params, arg1, arg2):
             disp = "%s :: %s :: %s :: %s" % (alarm_id.ljust(10), display_name.ljust(50), alarm_status.ljust(20), str(num_notifications).ljust(10))
             print(disp)
 
-    print("\n\n")
+    print("-" * 104)
     print("Total Active: " + str(total_active))
     print("Total Closed: " + str(total_closed))
-    print("\n")
+    print("-" * 104)
 
 def get_alarms_directory():
     return CONFIG_DATA['REMINDERS_DROP_DIR']
