@@ -36,6 +36,69 @@ def create_watcher(params, arg1, arg2):
     save_watcher(data)
 
 
+def get_complete_watch_list():
+    watchers_directory = get_watcher_directory()
+    json_files = [f for f in os.listdir(watchers_directory) if
+                  (os.path.isfile(os.path.join(watchers_directory, f)) and f.endswith(".json"))]
+
+    files_list = [os.path.join(watchers_directory, x) for x in json_files]
+    return common_utils.load_json_files(files_list)
+
+
+def whether_watcher_is_active(watcher_data):
+    status = watcher_data[FIELD_STATUS]
+
+    if status in [FIELD_VALUE_FOR_STATUS_CLOSED, FIELD_VALUE_FOR_STATUS_EXPIRED, FIELD_VALUE_FOR_STATUS_INVALID_URL]:
+        return False
+
+    created_at = watcher_data[FIELD_CREATED_AT]
+    created_at_date = string_to_date(created_at)
+    watcher_expiry_time = created_at_date + timedelta(hours=5)
+    current_time = datetime.now()
+
+    if current_time > watcher_expiry_time:
+        return False
+
+    return True
+
+def list_watchers(params, arg1, arg2):
+    watchers_list = get_complete_watch_list()
+    show_all = True if arg1 == "-a" else False
+
+    disp = "%s :: %s :: %s :: %s" % ("ID".ljust(10), "Url".ljust(50), "Status".ljust(20), "Num Notified".ljust(10))
+    print("-" * 104)
+    print(disp)
+    print("-" * 104)
+
+    total_active = 0
+    total_closed = 0
+
+    for watcher_item in watchers_list:
+        num_notifications = 0
+
+        if FIELD_NOTIFICATION_TIMES in watcher_item:
+            num_notifications = len(watcher_item[FIELD_NOTIFICATION_TIMES])
+
+        watcher_id = watcher_item[FIELD_WATCHER_ID]
+        url = watcher_item[FIELD_URL][:45]
+        watcher_status = watcher_item[FIELD_STATUS]
+        watcher_is_active = whether_watcher_is_active(watcher_item)
+
+        if watcher_is_active:
+            total_active = total_active + 1
+        else:
+            total_closed = total_closed + 1
+
+        if watcher_is_active or show_all:
+            disp = "%s :: %s :: %s :: %s" % (watcher_id.ljust(10), url.ljust(50), watcher_status.ljust(20), str(num_notifications).ljust(10))
+            print(disp)
+
+    print("-" * 104)
+    print("Total Active: " + str(total_active))
+    print("Total Closed: " + str(total_closed))
+    print("-" * 104)
+
+
 def bot_notify(params, arg1, arg2):
     return None
 
@@ -83,6 +146,12 @@ def get_cmd(code, desc, fnc):
     }
 
 
+def display_primary_operations(primary_operations):
+    primary_operation_codes = [x['code'] for x in primary_operations]
+    print("usage: :: a [%s]" % (",".join(primary_operation_codes)))
+    for cmd in primary_operations:
+        print("\t\t%s \t\t[%s]" % (cmd['code'], cmd['desc']))
+
 if __name__ == "__main__":
     common_credentials_file_path = os.path.join(str(Path.home()), ".common.creds.json")
     config_data_content = common_utils.read_file_contents(common_credentials_file_path)
@@ -90,15 +159,17 @@ if __name__ == "__main__":
 
     primary_operations = [
         get_cmd("c", "Create jenkins watcher", create_watcher),
-        get_cmd("bot_notify", "bot notify", bot_notify)]
-    # get_cmd("display", "Save head commit & Open in editor.", display_alarms)]
-    # get_cmd("bot_notify", "Should be used by cron/bot to check and display notification if required.", notify_if_required)]
+        get_cmd("bot_notify", "bot notify", bot_notify),
+        get_cmd("list", "list", list_watchers)]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
     mode = common_utils.get_param(1)
-    if mode is None or mode not in primary_operation_codes:
-        # display_primary_operations(primary_operations)
-        # list_alarms(common_utils.get_params(), common_utils.get_param(2), common_utils.get_param(3))
+    if mode is None:
+        list_watchers(common_utils.get_params(), common_utils.get_param(2), common_utils.get_param(3))
+        common_utils.err_exit()
+
+    if mode not in primary_operation_codes:
+        display_primary_operations(primary_operations)
         common_utils.err_exit()
 
     index = primary_operation_codes.index(mode)

@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 
 
 def pull_env_var(key):
@@ -9,6 +10,17 @@ def pull_env_var(key):
         sys.exit(1)
 
     return env_value
+
+
+def load_json_files(json_files):
+    data = []
+
+    for json_file in json_files:
+        # full_path = os.path.join(get_alarms_directory(), json_file)
+        # print("Attempting to load: " + json_file)
+        data.append(json.loads(read_file_contents(json_file)))
+
+    return data
 
 
 def read_file_contents(file_path):

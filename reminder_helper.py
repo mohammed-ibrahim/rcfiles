@@ -256,6 +256,7 @@ def list_alarms(params, arg1, arg2):
     print("Total Closed: " + str(total_closed))
     print("-" * 104)
 
+
 def get_alarms_directory():
     return CONFIG_DATA['REMINDERS_DROP_DIR']
 
@@ -358,9 +359,12 @@ if __name__ == "__main__":
 
     primary_operation_codes = [x['code'] for x in primary_operations]
     mode = common_utils.get_param(1)
-    if mode is None or mode not in primary_operation_codes:
-        # display_primary_operations(primary_operations)
+    if mode is None:
         list_alarms(common_utils.get_params(), common_utils.get_param(2), common_utils.get_param(3))
+        common_utils.err_exit()
+
+    if mode not in primary_operation_codes:
+        display_primary_operations(primary_operations)
         common_utils.err_exit()
 
     index = primary_operation_codes.index(mode)
