@@ -3,6 +3,8 @@ import common_utils
 import os
 from pathlib import Path
 from datetime import datetime, timedelta
+import requests
+from requests.exceptions import InvalidURL, MissingSchema
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
@@ -11,12 +13,11 @@ FIELD_CREATED_AT = "created_at"
 FIELD_URL = "url"
 FIELD_NOTIFICATION_TIMES = "notification_times"
 FIELD_STATUS = "status"
-
+FIELD_REASON = "reason"
 
 FIELD_VALUE_FOR_STATUS_CREATED = "created"
-FIELD_VALUE_FOR_STATUS_EXPIRED = "expired"
 FIELD_VALUE_FOR_STATUS_CLOSED = "closed"
-FIELD_VALUE_FOR_STATUS_INVALID_URL = "invalid_url"
+FIELD_VALUE_FOR_REASON_EXPIRED = "Watcher time expired"
 
 
 def create_watcher(params, arg1, arg2):
@@ -45,14 +46,9 @@ def get_complete_watch_list():
     return common_utils.load_json_files(files_list)
 
 
-def whether_watcher_is_active(watcher_data):
-    status = watcher_data[FIELD_STATUS]
-
-    if status in [FIELD_VALUE_FOR_STATUS_CLOSED, FIELD_VALUE_FOR_STATUS_EXPIRED, FIELD_VALUE_FOR_STATUS_INVALID_URL]:
-        return False
-
-    created_at = watcher_data[FIELD_CREATED_AT]
-    created_at_date = string_to_date(created_at)
+def whether_watcher_time_expired(watcher_data):
+    created_at_string_format = watcher_data[FIELD_CREATED_AT]
+    created_at_date = string_to_date(created_at_string_format)
     watcher_expiry_time = created_at_date + timedelta(hours=5)
     current_time = datetime.now()
 
@@ -60,6 +56,59 @@ def whether_watcher_is_active(watcher_data):
         return False
 
     return True
+
+
+def whether_watcher_is_active(watcher_data):
+    status = watcher_data[FIELD_STATUS]
+
+    if status in [FIELD_VALUE_FOR_STATUS_CLOSED]:
+        return False
+
+    return whether_watcher_time_expired(watcher_data)
+
+
+WATCHER_ACTION_DO_NOTHING = "nothing"
+WATCHER_ACTION_DO_KEEP_POLLING = "keepPolling"
+WATCHER_ACTION_DO_NOTIFY_SUCCESS = "notifySuccess"
+WATCHER_ACTION_DO_NOTIFY_FAILURE = "notifyFailure"
+
+
+def get_notification_body(watcher_data, reason):
+    # TODO: return notification body
+    return None
+
+
+def fetch_job_status(watcher_data):
+    url = watcher_data[FIELD_URL]
+    json_api_url = url + "/api/json"
+
+    try:
+        response = requests.get(json_api_url)
+        if response.status_code != 200:
+            # Stopped here
+    except (InvalidURL, MissingSchema) as e:
+        # Stopped here
+
+
+def determine_watcher_action(watcher_data):
+    status = watcher_data[FIELD_STATUS]
+
+    if status in [FIELD_VALUE_FOR_STATUS_CLOSED]:
+        return None
+
+    if status == FIELD_VALUE_FOR_STATUS_CREATED:
+        expired = whether_watcher_time_expired(watcher_data)
+
+        if expired:
+            watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
+            watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_EXPIRED
+            save_watcher(watcher_data)
+            return get_notification_body(watcher_data, FIELD_VALUE_FOR_REASON_EXPIRED)
+        else:
+            job_status_result = fetch_job_status(watcher_data)
+
+    # TODO: Stopped here
+
 
 def list_watchers(params, arg1, arg2):
     watchers_list = get_complete_watch_list()
@@ -90,7 +139,8 @@ def list_watchers(params, arg1, arg2):
             total_closed = total_closed + 1
 
         if watcher_is_active or show_all:
-            disp = "%s :: %s :: %s :: %s" % (watcher_id.ljust(10), url.ljust(50), watcher_status.ljust(20), str(num_notifications).ljust(10))
+            disp = "%s :: %s :: %s :: %s" % (
+                watcher_id.ljust(10), url.ljust(50), watcher_status.ljust(20), str(num_notifications).ljust(10))
             print(disp)
 
     print("-" * 104)
@@ -100,6 +150,10 @@ def list_watchers(params, arg1, arg2):
 
 
 def bot_notify(params, arg1, arg2):
+    watchers_list = get_complete_watch_list()
+
+    for watcher_item in watchers_list:
+        watcher_is_active = whether_watcher_is_active(watcher_item)
     return None
 
 
@@ -151,6 +205,7 @@ def display_primary_operations(primary_operations):
     print("usage: :: a [%s]" % (",".join(primary_operation_codes)))
     for cmd in primary_operations:
         print("\t\t%s \t\t[%s]" % (cmd['code'], cmd['desc']))
+
 
 if __name__ == "__main__":
     common_credentials_file_path = os.path.join(str(Path.home()), ".common.creds.json")
