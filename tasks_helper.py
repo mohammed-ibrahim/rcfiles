@@ -392,16 +392,22 @@ def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables)
     push_template = "git push origin HEAD:topic/{user}/{branch}"
     push_command = txt_substitute(push_template, {'user': get_current_user(), 'branch': branch_to_use})
 
+    output = "null"
     if remote_branch_details is None:
         # Only Push
+        print("Only pushing, no existing branch found :: " + push_command)
         output = s_run_process_and_get_output(push_command)
     else:
-        # Delete and push
-        output1 = s_run_process_and_get_output(delete_command)
-        output2 = s_run_process_and_get_output(push_command)
-        output = output1 + "\n\n\n" + output2
+        # force push
+        # output1 = s_run_process_and_get_output(delete_command)
+        # output2 = s_run_process_and_get_output(push_command)
+        # output = output1 + "\n\n\n" + output2
 
-    print("Command output: %s" % (output))
+        force_push_command = push_command + " -f"
+        print("Force pushing as existing branch found :: " + force_push_command)
+        output = s_run_process_and_get_output(force_push_command)
+
+    print("Command output: %s" % output)
 
 
 def coverity_push_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -485,7 +491,7 @@ def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     keyword = arg2
     short_id = None
     for c in containers:
-        if (keyword in c.id) or (keyword in c.name) or (keyword in c.image):
+        if (keyword in c.id) or (keyword in c.name):
             short_id = c.short_id
             break
 
