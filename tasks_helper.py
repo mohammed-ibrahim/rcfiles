@@ -12,6 +12,7 @@ import webbrowser
 import uuid
 import urllib
 
+
 # _________                         __                 __
 # \_   ___ \  ____   ____   _______/  |______    _____/  |_  ______
 # /    \  \/ /  _ \ /    \ /  ___/\   __\__  \  /    \   __\/  ___/
@@ -20,8 +21,8 @@ import urllib
 #         \/            \/     \/            \/     \/          \/
 
 class Timer():
-
     _start_time = None
+
     def __init__(self):
         self._start_time = datetime.datetime.now()
 
@@ -43,7 +44,6 @@ HR = "--------------------------------------------------------------------------
 #  |        \>    <\  ___/\  \___|  |  /|  | |  (  <_> )   |  \ /    Y    \  ___/|  | |   Y  (  <_> ) /_/ |\___ \
 # /_______  /__/\_ \\___  >\___  >____/ |__| |__|\____/|___|  / \____|__  /\___  >__| |___|  /\____/\____ /____  >
 #         \/      \/    \/     \/                           \/          \/     \/          \/            \/    \/
-
 
 
 update_branch_template = """
@@ -78,8 +78,9 @@ Merge Master            ::   git checkout master &&
                              git push
 ----------------------------------------------------------------------------------------
 """
-def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
+
+def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
     if branch_to_use is None:
         branch_to_use = get_current_branch()
@@ -105,6 +106,7 @@ def update_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     print(cmd)
 
+
 def copy_full_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
     if branch_to_use is None:
@@ -114,18 +116,23 @@ def copy_full_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy(jenkin_cmd)
     print("Copied: %s" % jenkin_cmd)
 
+
 def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
-    file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
+    file_name = "%s.%s.%s.diff" % (
+    get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, process_diff_file(head_diff))
     pyperclip.copy("vi %s" % file_name)
     # open_file_in_editor(file_name)
 
+
 def shead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
-    file_name = "%s.%s.%s.diff" % (get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
+    file_name = "%s.%s.%s.diff" % (
+    get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, head_diff)
     return file_name
+
 
 def lhead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     lhead_diff = s_run_process_and_get_output('git diff-tree --no-commit-id --name-only -r HEAD')
@@ -144,6 +151,7 @@ def lhead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     write_to_file(file_name, NEW_LINE.join(all_lines))
     # open_file_in_editor(file_name)
     open_file_in_editor_if_specified(params, file_name)
+
 
 # def git_copy(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #     process_output = s_run_process_and_get_output('git status')
@@ -170,6 +178,7 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     open_url_in_browser(required_url)
 
+
 def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = arg2
     if url is None:
@@ -182,6 +191,7 @@ def save_url(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor_if_specified(params, file_name)
 
+
 def save_curl(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = None
     headers = {}
@@ -193,12 +203,12 @@ def save_curl(params, arg2, arg3, arg4, arg5, arg6, env_variables):
             continue
 
         if part == "-H":
-            next_part = params[i+1]
+            next_part = params[i + 1]
             parts = next_part.split(": ")
             headers[parts[0]] = parts[1]
 
         if part.lower() == "-e":
-            extension = params[i+1]
+            extension = params[i + 1]
 
         if part.startswith("http"):
             url = part
@@ -208,10 +218,11 @@ def save_curl(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         return
 
     file_name = get_qualifier_with_custom_ctx("curl-save", extension, env_variables)
-    req = requests.get(url, headers = headers)
+    req = requests.get(url, headers=headers)
     write_to_file(file_name, req.content)
     pyperclip.copy("vi %s" % file_name)
     open_file_in_editor_if_specified(params, file_name)
+
 
 def save_diff(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     git_diff = s_run_process_and_get_output('git diff')
@@ -219,6 +230,7 @@ def save_diff(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     write_to_file(file_name, process_diff_file(git_diff))
     pyperclip.copy("vi %s" % file_name)
     # open_file_in_editor(file_name, EDITOR_VIM)
+
 
 # def get_time_stamp(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #     fully_qualified_path_for_backup = get_qualifier_with_ctx(env_variables)
@@ -237,11 +249,13 @@ def gen_uuid(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     print("\n%s - copied to clipboard.\n" % ustr)
     pyperclip.copy(ustr)
 
+
 def save_cmd_and_open(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     contents = read_stdin()
     file_name = "%s.cmd.out.txt" % get_qualifier_with_ctx(env_variables)
     write_to_file(file_name, contents)
     open_file_in_editor(file_name, EDITOR_ATOM)
+
 
 # def reduce_filenames(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #     contents = read_stdin()
@@ -282,6 +296,7 @@ def open_branch_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     open_file_in_editor(file_identifier, EDITOR_ATOM)
 
+
 def slugify_cmd_line(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     if len(params) < 1:
         print("need params to be slugified")
@@ -291,6 +306,7 @@ def slugify_cmd_line(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     text = slugify(text)
     pyperclip.copy(text)
     print(text)
+
 
 CTC_TEMPLATE = """
 
@@ -302,6 +318,8 @@ Remote Commit    ::  {remote_commit_id}
 -------------------------------------------------------------
 
 """
+
+
 def compare_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
     if branch_to_use is None:
@@ -340,9 +358,11 @@ def open_jira_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     jira_url = "%s/jira/browse/%s" % (jira_domain, branch_to_use)
     open_url_in_browser(jira_url)
 
+
 def open_repository(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     repo_url = get_repo_url()
     open_url_in_browser(repo_url)
+
 
 def load_all_mocks(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = "http://localhost:1080/mockserver/retrieve?type=ACTIVE_EXPECTATIONS"
@@ -357,9 +377,11 @@ def load_all_mocks(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     else:
         print("There was problem communicating to : %s ::: %s" % (url, req.content))
 
+
 def copy_amend(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     is_safe_to_amend()
     pyperclip.copy("git commit --amend")
+
 
 def copy_amend_no_edit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     is_safe_to_amend()
@@ -420,10 +442,12 @@ def merge_to_staging(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     target_branch_name = 'dev/staging'
     resolve_pre_merge(source_branch_name, target_branch_name, env_variables)
 
+
 def merge_to_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     source_branch_name = arg2
     target_branch_name = 'master'
     resolve_pre_merge(source_branch_name, target_branch_name, env_variables)
+
 
 def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     """
@@ -461,7 +485,8 @@ def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     remote_commit_id = remote_commit_details['id']
 
     if local_commmit_id != remote_commit_id:
-        print("Local commit: %s Remote commit: %s differ for branch: %s" % (local_commmit_id, remote_commit_id, master_branch_name))
+        print("Local commit: %s Remote commit: %s differ for branch: %s" % (
+        local_commmit_id, remote_commit_id, master_branch_name))
         err_exit()
 
     s_run_process_and_get_output('git checkout -b %s' % branch_to_use)
@@ -475,6 +500,7 @@ docker logs %s
 docker logs -f %s
 docker logs %s 2>&1 > ~/out.txt
 """
+
 
 def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     if arg2 is None:
@@ -494,7 +520,6 @@ def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         if (keyword in c.id) or (keyword in c.name):
             short_id = c.short_id
             break
-
 
     if short_id is None:
         print("Nothing found for the keyword: " + keyword)
@@ -539,6 +564,7 @@ def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     write_to_file(temp_file_name, prefix + command_output)
     open_file_in_editor(temp_file_name, EDITOR_ATOM)
 
+
 #  ____ ___   __  .__.__  .__  __              _____          __  .__               .___
 # |    |   \_/  |_|__|  | |__|/  |_ ___.__.   /     \   _____/  |_|  |__   ____   __| _/______
 # |    |   /\   __\  |  | |  \   __<   |  |  /  \ /  \_/ __ \   __\  |  \ /  _ \ / __ |/  ___/
@@ -565,14 +591,17 @@ def get_locally_listed_branches():
     lines = [x[2:] for x in lines]
     return lines
 
+
 def ensure_not_a_protected_branch(branch_to_use):
     if branch_to_use in ["master", "dev/staging", "staging"]:
         print("This is a protected branch: " + branch_to_use)
         err_exit()
 
+
 def ensure_no_git_diff_or_staged_files_present():
     ensure_no_git_diff_present()
     ensure_no_staged_file_present()
+
 
 def ensure_no_git_diff_present():
     git_diff = s_run_process_and_get_output('git diff')
@@ -581,12 +610,14 @@ def ensure_no_git_diff_present():
         print("Current branch not clean - Diff Present")
         err_exit()
 
+
 def ensure_no_staged_file_present():
     stage_files = s_run_process_and_get_output('git diff --name-only --cached')
 
     if len(stage_files.strip()) > 0:
         print("Current branch not clean - Staged files present")
         err_exit()
+
 
 def is_safe_to_amend():
     branch_to_use = get_current_branch()
@@ -606,8 +637,8 @@ def is_safe_to_amend():
 
     return True
 
-def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
 
+def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
     print("Merging %s into %s" % (source_branch_name, target_branch_name))
 
     if source_branch_name == target_branch_name:
@@ -632,12 +663,15 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
     source_branch_remote_commit_id = source_branch_remote_commit_details['id']
 
     if source_branch_local_commmit_id != source_branch_remote_commit_id:
-        print("Local commit: %s Remote commit: %s differ for branch: %s" % (source_branch_local_commmit_id, source_branch_remote_commit_id, source_branch_name))
+        print("Local commit: %s Remote commit: %s differ for branch: %s" % (
+        source_branch_local_commmit_id, source_branch_remote_commit_id, source_branch_name))
         err_exit()
 
-    print("Commit id matches remote and local for branch: %s commit: %s" % (source_branch_name, source_branch_remote_commit_id))
+    print("Commit id matches remote and local for branch: %s commit: %s" % (
+    source_branch_name, source_branch_remote_commit_id))
     source_branch_title = source_branch_remote_commit_details['title']
-    user_input = input("Remote change are related to ::: %s ::: Are you sure you want to continue (y/n)?" % source_branch_title)
+    user_input = input(
+        "Remote change are related to ::: %s ::: Are you sure you want to continue (y/n)?" % source_branch_title)
 
     if user_input != 'y':
         print("Exiting the operation")
@@ -652,24 +686,28 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
         err_exit()
 
     target_branch_remote_commit_id = target_branch_remote_commit_details['id']
-    #title = target_branch_remote_commit_details['title']
+    # title = target_branch_remote_commit_details['title']
 
     if target_branch_local_commit_id != target_branch_remote_commit_id:
-        print("Local commit: %s Remote commit: %s differ for branch: %s" % (target_branch_local_commit_id, target_branch_remote_commit_id, target_branch_name))
+        print("Local commit: %s Remote commit: %s differ for branch: %s" % (
+        target_branch_local_commit_id, target_branch_remote_commit_id, target_branch_name))
         err_exit()
 
-    print("Commit id matches remote and local for branch: %s commit: %s" % (target_branch_name, target_branch_remote_commit_id))
+    print("Commit id matches remote and local for branch: %s commit: %s" % (
+    target_branch_name, target_branch_remote_commit_id))
 
     merge_command_template = "git merge origin/topic/{user}/{branch} --no-ff"
     merge_command = txt_substitute(merge_command_template, {'user': get_current_user(), 'branch': source_branch_name})
     pyperclip.copy(merge_command)
     print("Copyed to the clipboard: %s" % (merge_command))
 
+
 def checkout_and_pull_branch(branch_name):
     s_run_process_and_get_output('git checkout ' + branch_name)
     s_run_process_and_get_output('git pull')
     s_run_process_and_get_output('git pull origin ' + branch_name)
     s_run_process_and_get_output('git pull')
+
 
 def ensure_commit_hash_has_value(commit_hash_text, key):
     lines = commit_hash_text.split("\n")
@@ -706,8 +744,8 @@ def find_ticket(base_dir, ticket_name):
 
     return None
 
-def txt_substitute(input, replacement_vars):
 
+def txt_substitute(input, replacement_vars):
     text = input
     for key in replacement_vars:
         rkey = "{%s}" % key
@@ -717,6 +755,7 @@ def txt_substitute(input, replacement_vars):
 
     return text
 
+
 def read_file_contents(file_path):
     contents = None
     with open(file_path, "r") as file_pointer:
@@ -724,8 +763,10 @@ def read_file_contents(file_path):
 
     return contents
 
+
 def get_repo_base_path():
     return os.path.dirname(os.path.abspath(__file__))
+
 
 def load_template_contents(template_name):
     template_dir = os.path.join(get_repo_base_path(), "templates", template_name)
@@ -745,6 +786,7 @@ NEXT_FILE = """
 
 
 """
+
 
 def process_diff_file(diff_text):
     lines = diff_text.split(NEW_LINE)
@@ -771,6 +813,7 @@ def process_diff_file(diff_text):
 
     return NEW_LINE.join(buffer)
 
+
 def read_stdin():
     try:
         return sys.stdin.read()
@@ -778,22 +821,25 @@ def read_stdin():
         print(e.args)
         return None
 
+
 def get_current_user():
     current_user_details = s_run_process_and_get_output("whoami")
     return current_user_details.split(NEW_LINE)[0]
 
+
 def open_url_in_browser(url):
     webbrowser.open(url, new=0, autoraise=True)
+
 
 def open_file_in_editor_if_specified(params, file_name):
     if "--atom" in params:
         open_file_in_editor(file_name, EDITOR_ATOM)
 
+
 # def open_file_in_editor(file_name):
 #     open_file_in_editor(file_name, EDITOR_ATOM)
 
 def open_file_in_editor(file_name, editor):
-
     if editor == EDITOR_ATOM:
         s_run_process_and_get_output("/usr/local/bin/atom %s" % file_name)
     else:
@@ -811,10 +857,12 @@ def get_qualifier_with_ctx(env_variables):
     local_directory = env_variables['LOCAL_BACKUP_DIR']
     return os.path.join(local_directory, "%s-%s" % (ctx, get_ts()))
 
+
 def get_qualifier_with_custom_ctx(ctx, extension, env_variables):
     ctx = slugify(ctx)
     local_directory = env_variables['LOCAL_BACKUP_DIR']
     return os.path.join(local_directory, "%s-%s.%s" % (ctx, get_ts(), extension))
+
 
 def write_to_file(file_name, content):
     with open(file_name, "w") as file_pointer:
@@ -826,8 +874,10 @@ def write_to_file(file_name, content):
 
     print("File write complete: " + file_name)
 
+
 def get_head_commit_id():
     return s_run_process_and_get_output('git rev-parse HEAD').replace(NEW_LINE, "").strip()
+
 
 def get_head_commit_for_branch(branch_name):
     process_output = s_run_process_and_get_output('git log -1 %s' % branch_name)
@@ -840,8 +890,8 @@ def get_head_commit_for_branch(branch_name):
     commit_id = parts[1]
     return commit_id
 
-def get_remote_branch_top_commit_details(branch_name, env_variables):
 
+def get_remote_branch_top_commit_details(branch_name, env_variables):
     remote_branch = None
     if branch_name in ['master']:
         remote_branch = branch_name
@@ -856,8 +906,9 @@ def get_remote_branch_top_commit_details(branch_name, env_variables):
         'PRIVATE-TOKEN': gitlab_api_key
     }
 
-    gitlab_api = "https://%s/api/v4/projects/%s/repository/commits/%s" % (gitlab_domain, get_gitlab_api_project_key(), url_encode(remote_branch))
-    req = requests.get(gitlab_api, headers = header)
+    gitlab_api = "https://%s/api/v4/projects/%s/repository/commits/%s" % (
+    gitlab_domain, get_gitlab_api_project_key(), url_encode(remote_branch))
+    req = requests.get(gitlab_api, headers=header)
     status_code = req.status_code
 
     if status_code == 200:
@@ -867,25 +918,31 @@ def get_remote_branch_top_commit_details(branch_name, env_variables):
         print("There was problem communicating to : %s ::: %s" % (gitlab_api, req.content))
         return None
 
+
 def get_gitlab_api_project_key():
     process_output = s_run_process_and_get_output('git config remote.origin.url')
     process_output = process_output.split(":")[1][:-5]
     return url_encode(process_output)
 
+
 def url_encode(s):
     return urllib.parse.quote_plus(s)
 
+
 def get_ts():
     return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%B-%d-%H-%M-%S')
+
 
 def slugify(text):
     # output = re.sub(r'\W+', '-', text)
     # return output.lower()
     return slugify_c(text).lower()
 
+
 def slugify_c(text):
     output = re.sub(r'\W+', '-', text)
     return output.strip("-")
+
 
 def pull_env_var(key):
     env_value = os.environ.get(key, None)
@@ -895,11 +952,13 @@ def pull_env_var(key):
 
     return env_value
 
+
 def get_cwd_name():
     cwd = os.getcwd()
     path_parts = cwd.split("/")
     cwd_name = path_parts.pop().strip()
     return cwd_name
+
 
 def get_repo_url():
     process_output = s_run_process_and_get_output('git config remote.origin.url')
@@ -910,9 +969,10 @@ def get_repo_url():
 
     return 'https://' + process_output.split("@")[1].replace(":", "/")[:-5]
 
+
 def run_process_and_get_output(command_list, exit_on_failure=False):
     print("Executing ::: %s" % " ".join(command_list))
-    p = subprocess.Popen(command_list, stdout=subprocess.PIPE,   stderr=subprocess.PIPE)
+    p = subprocess.Popen(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
 
     if exit_on_failure and len(err) > 0:
@@ -920,11 +980,14 @@ def run_process_and_get_output(command_list, exit_on_failure=False):
 
     return out.decode("utf-8")
 
+
 def err_exit():
     sys.exit(1)
 
+
 def s_run_process_and_get_output(s_cmd, exit_on_failure=False):
     return run_process_and_get_output(s_cmd.split(" "), exit_on_failure)
+
 
 def get_non_cmd_params():
     non_cmd_list = []
@@ -935,8 +998,9 @@ def get_non_cmd_params():
 
     return non_cmd_list
 
+
 def parse_branch_name_from_current_git_branch(branch_name):
-    branch_name = branch_name[2:] # remove '* '
+    branch_name = branch_name[2:]  # remove '* '
     # num_dashes = branch_name.count("-")
     #
     # if num_dashes > 1:
@@ -944,6 +1008,7 @@ def parse_branch_name_from_current_git_branch(branch_name):
     #     branch_name = branch_name[0:index_of_second_count]
 
     return branch_name
+
 
 def get_current_branch():
     branch_details = s_run_process_and_get_output("git branch")
@@ -954,6 +1019,7 @@ def get_current_branch():
     current_branch = marked_branches[0]
     return parse_branch_name_from_current_git_branch(current_branch)
 
+
 def get_cmd(code, desc, options, fnc, include_timer_in_logs):
     return {
         "code": code,
@@ -963,17 +1029,20 @@ def get_cmd(code, desc, options, fnc, include_timer_in_logs):
         "include_timer_in_logs": include_timer_in_logs
     }
 
+
 def display_primary_operations(primary_operations):
     primary_operation_codes = [x['code'] for x in primary_operations]
     print("usage: :: a [%s]" % (",".join(primary_operation_codes)))
     for cmd in primary_operations:
         print("\t\t%s \t\t[%s]" % (cmd['code'], cmd['desc']))
 
+
 def get_param(index):
     if len(sys.argv) > index:
         return sys.argv[index]
 
     return None
+
 
 def get_params():
     cmd_list = []
@@ -997,42 +1066,42 @@ if __name__ == "__main__":
         'LOCAL_BACKUP_DIR': pull_env_var('LOCAL_BACKUP_DIR'),
         'INFO_SOURCE_DIRECTORY': pull_env_var('INFO_SOURCE_DIRECTORY'),
         'GITLAB_DOMAIN': pull_env_var('GITLAB_DOMAIN'),
-        'GITLAB_API_KEY':  pull_env_var('GITLAB_API_KEY'),
+        'GITLAB_API_KEY': pull_env_var('GITLAB_API_KEY'),
         'JIRA_DOMAIN': pull_env_var('JIRA_DOMAIN')
     }
 
     primary_operations = [
-        get_cmd("ub",       "Update Branch Commands.",              "non", update_branch, False),
-        get_cmd("j",        "Copy full branch for Jenkins Command",                  "non", copy_full_branch, True),
-        get_cmd("head",     "Save head commit & Open in editor.",   "non", head, False),
-        get_cmd("shead",    "Save head commit patch to backup.",    "non", shead, False),
-        get_cmd("lhead",    "List file in head commit.",            "non", lhead, False),
-        get_cmd("ob",       "Open Branch",                          "non", open_branch, False),
-        get_cmd("url",      "Save url output to file",              "non", save_url, False),
-        get_cmd("curl",     "Save curl output to file",             "non", save_curl, False),
-        get_cmd("diff",     "Save git diff",                        "non", save_diff, False),
+        get_cmd("ub", "Update Branch Commands.", "non", update_branch, False),
+        get_cmd("j", "Copy full branch for Jenkins Command", "non", copy_full_branch, True),
+        get_cmd("head", "Save head commit & Open in editor.", "non", head, False),
+        get_cmd("shead", "Save head commit patch to backup.", "non", shead, False),
+        get_cmd("lhead", "List file in head commit.", "non", lhead, False),
+        get_cmd("ob", "Open Branch", "non", open_branch, False),
+        get_cmd("url", "Save url output to file", "non", save_url, False),
+        get_cmd("curl", "Save curl output to file", "non", save_curl, False),
+        get_cmd("diff", "Save git diff", "non", save_diff, False),
         # get_cmd("ts",       "Get backup time stamp",                "non", get_time_stamp, False),
         # get_cmd("gs",       "Save git status to file",              "non", save_git_status, False),
-        get_cmd("uuid",     "Generate new uuid",                    "non", gen_uuid, True),
-        get_cmd("sc",       "Save cmd output to file & open",       "non", save_cmd_and_open, False),
+        get_cmd("uuid", "Generate new uuid", "non", gen_uuid, True),
+        get_cmd("sc", "Save cmd output to file & open", "non", save_cmd_and_open, False),
         # get_cmd("gc",       "Copy and concat git status files",     "-m" , git_copy, False),
         # get_cmd("red",      "Reduce to filenames",                  "non" , reduce_filenames, False),
-        get_cmd("o",        "Open branch specifiec file",           "branch_name", open_branch_ticket, False),
-        get_cmd("sl",       "Slugify text pasted as parameter",     "non", slugify_cmd_line, False),
-        get_cmd("ctc",      "Compare top commit with remote top",   "non", compare_top_commit, False),
+        get_cmd("o", "Open branch specifiec file", "branch_name", open_branch_ticket, False),
+        get_cmd("sl", "Slugify text pasted as parameter", "non", slugify_cmd_line, False),
+        get_cmd("ctc", "Compare top commit with remote top", "non", compare_top_commit, False),
         # get_cmd("en",       "Enlist the branch",                    "non", enlist_branches, False),
-        get_cmd("jira",     "Open Jira Ticket",                     "non", open_jira_ticket, False),
-        get_cmd("or",       "Open Repo",                            "non", open_repository, False),
-        get_cmd("mock",     "Load all mocks",                       "non", load_all_mocks, False),
-        get_cmd("am",       "Copy the amend code",                  "non", copy_amend, False),
-        get_cmd("ame",      "Copy the amend code without edit",     "non", copy_amend_no_edit, False),
-        get_cmd("rbt",      "Review board utility",                 "non", run_rbt_utility, False),
-        get_cmd("push",     "Review board utility",                 "non", safe_push_remote_branch, True),
-        get_cmd("cov",      "Coverity-push-helper",                 "non", coverity_push_helper, True),
-        get_cmd("merge-staging","Merge to Staging",                     "non", merge_to_staging, True),
-        get_cmd("merge-master","Merge to Master",                   "non", merge_to_master, True),
-        get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master, True),
-        get_cmd("dock",      "docker helper",     "non",                   docker_helper, False),
+        get_cmd("jira", "Open Jira Ticket", "non", open_jira_ticket, False),
+        get_cmd("or", "Open Repo", "non", open_repository, False),
+        get_cmd("mock", "Load all mocks", "non", load_all_mocks, False),
+        get_cmd("am", "Copy the amend code", "non", copy_amend, False),
+        get_cmd("ame", "Copy the amend code without edit", "non", copy_amend_no_edit, False),
+        get_cmd("rbt", "Review board utility", "non", run_rbt_utility, False),
+        get_cmd("push", "Review board utility", "non", safe_push_remote_branch, True),
+        get_cmd("cov", "Coverity-push-helper", "non", coverity_push_helper, True),
+        get_cmd("merge-staging", "Merge to Staging", "non", merge_to_staging, True),
+        get_cmd("merge-master", "Merge to Master", "non", merge_to_master, True),
+        get_cmd("branch-out", "Create new branch out of master", "non", branch_out_from_master, True),
+        get_cmd("dock", "docker helper", "non", docker_helper, False),
         get_cmd("mr", "open merge requests for the repo", "non", open_mr_page, False),
         get_cmd("gtc", "get remote top commit", "non", get_remote_top_commit, False)
     ]
