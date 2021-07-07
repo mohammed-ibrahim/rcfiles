@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import requests
 from requests.exceptions import InvalidURL, MissingSchema
+import system_config_reader
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
@@ -17,7 +18,12 @@ FIELD_REASON = "reason"
 
 FIELD_VALUE_FOR_STATUS_CREATED = "created"
 FIELD_VALUE_FOR_STATUS_CLOSED = "closed"
+
 FIELD_VALUE_FOR_REASON_EXPIRED = "Watcher time expired"
+FIELD_VALUE_FOR_REASON_FAILED = "Job Failed"
+FIELD_VALUE_FOR_REASON_SUCCESS = "Job Succeeded"
+FIELD_VALUE_FOR_REASON_ERROR = "Job Errored"
+FIELD_VALUE_FOR_REASON_NOTIFIED_MORE_THAN_TWICE = "Notified more than twice"
 
 
 def create_watcher(params, arg1, arg2):
@@ -73,9 +79,20 @@ WATCHER_ACTION_DO_NOTIFY_SUCCESS = "notifySuccess"
 WATCHER_ACTION_DO_NOTIFY_FAILURE = "notifyFailure"
 
 
-def get_notification_body(watcher_data, reason):
-    # TODO: return notification body
-    return None
+NOTIFICATION_CATEGORY_SUCCESS = 1
+NOTIFICATION_CATEGORY_FAILURE = 2
+NOTIFICATION_CATEGORY_ERROR = 3
+NOTIFICATION_CATEGORY_JOB_POLL_EXPIRED = 4
+
+
+def get_notification_body(watcher_data, notification_category):
+    return notification_category
+
+
+JOB_STATUS_PENDING = "pending"
+JOB_STATUS_COMPLETED = "completed"
+JOB_STATUS_FAILED = "failed"
+JOB_STATUS_ERROR = "error"
 
 
 def fetch_job_status(watcher_data):
@@ -85,15 +102,31 @@ def fetch_job_status(watcher_data):
     try:
         response = requests.get(json_api_url)
         if response.status_code != 200:
-            # Stopped here
+            return JOB_STATUS_ERROR
+        else:
+            data = json.loads(response.content)
+            result = data['result']
+
+            if result == "SUCCESS":
+                return JOB_STATUS_COMPLETED
+            if result is None:
+                return JOB_STATUS_PENDING
+            if result == "FAILURE":
+                return JOB_STATUS_FAILED
+
     except (InvalidURL, MissingSchema) as e:
         # Stopped here
+        return JOB_STATUS_ERROR
+
+    return JOB_STATUS_ERROR
 
 
 def determine_watcher_action(watcher_data):
     status = watcher_data[FIELD_STATUS]
+    watcher_job_id = watcher_data[FIELD_WATCHER_ID]
 
     if status in [FIELD_VALUE_FOR_STATUS_CLOSED]:
+        print("Job %s already closed" % watcher_job_id)
         return None
 
     if status == FIELD_VALUE_FOR_STATUS_CREATED:
@@ -103,12 +136,54 @@ def determine_watcher_action(watcher_data):
             watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
             watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_EXPIRED
             save_watcher(watcher_data)
-            return get_notification_body(watcher_data, FIELD_VALUE_FOR_REASON_EXPIRED)
+            print("Job %s has expired" % watcher_job_id)
+            return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_JOB_POLL_EXPIRED)
         else:
+            print("Looking for api status for %s" % watcher_job_id)
             job_status_result = fetch_job_status(watcher_data)
 
-    # TODO: Stopped here
+            print("Looking for api status for %s is %s" % (watcher_job_id, job_status_result))
+            if job_status_result == JOB_STATUS_PENDING:
+                return None # do nothing if job not completed
 
+            if job_status_result == JOB_STATUS_FAILED:
+                watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
+                watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_FAILED
+                save_watcher(watcher_data)
+                print("job %s has failed closing and marking notification" % watcher_job_id)
+                return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_FAILURE)
+
+            if job_status_result == JOB_STATUS_ERROR:
+                watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
+                watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_ERROR
+                save_watcher(watcher_data)
+                print("job %s has errors" % watcher_job_id)
+                return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_ERROR)
+
+            if job_status_result == JOB_STATUS_COMPLETED:
+                notification_times = 0
+                if FIELD_NOTIFICATION_TIMES in watcher_data:
+                    notification_times = len(watcher_data[FIELD_NOTIFICATION_TIMES])
+
+                if notification_times >= 3:
+                    watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
+                    watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_NOTIFIED_MORE_THAN_TWICE
+                    save_watcher(watcher_data)
+                    print("job %s has been notified more than twice, hence closing" % watcher_job_id)
+                    return None # No notification
+
+                if FIELD_NOTIFICATION_TIMES not in watcher_data:
+                    watcher_data[FIELD_NOTIFICATION_TIMES] = []
+
+                watcher_data[FIELD_NOTIFICATION_TIMES].append(date_to_string(datetime.now()))
+                print("job %s is completed, hence notifiing" % watcher_job_id)
+                return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_SUCCESS)
+
+            print("Unexpected job status for: %s" % watcher_job_id)
+            common_utils.err_exit()
+
+    print("Unexpected state for jobid: %s" % watcher_job_id)
+    common_utils.err_exit()
 
 def list_watchers(params, arg1, arg2):
     watchers_list = get_complete_watch_list()
@@ -151,10 +226,15 @@ def list_watchers(params, arg1, arg2):
 
 def bot_notify(params, arg1, arg2):
     watchers_list = get_complete_watch_list()
-
+    num_failed = 0
+    num_successful = 0
+    num_errored = 0
     for watcher_item in watchers_list:
-        watcher_is_active = whether_watcher_is_active(watcher_item)
-    return None
+        notification_data = determine_watcher_action(watcher_item)
+
+        if notification_data is not None:
+
+
 
 
 def get_file_path_from_id(watcher_id):
@@ -169,7 +249,7 @@ def save_watcher(watcher_data):
 
 
 def get_watcher_directory():
-    return CONFIG_DATA['WATCHER_DROP_DIR']
+    return system_config_reader.get("WATCHER_DROP_DIR")
 
 
 def generate_new_id():
@@ -208,9 +288,6 @@ def display_primary_operations(primary_operations):
 
 
 if __name__ == "__main__":
-    common_credentials_file_path = os.path.join(str(Path.home()), ".common.creds.json")
-    config_data_content = common_utils.read_file_contents(common_credentials_file_path)
-    CONFIG_DATA = json.loads(config_data_content)
 
     primary_operations = [
         get_cmd("c", "Create jenkins watcher", create_watcher),
