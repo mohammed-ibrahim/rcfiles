@@ -7,7 +7,7 @@ GLOBAL_MAP = None
 
 
 def load_global_map():
-    print("Loading global map")
+    # print("Loading global map")
     global GLOBAL_MAP
     GLOBAL_MAP = {}
 

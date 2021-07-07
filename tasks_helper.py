@@ -503,6 +503,27 @@ def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     print(DOCKER_FORMAT % (short_id, short_id, short_id, short_id))
 
 
+def open_mr_page(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    repo_url = get_repo_url()
+    url = repo_url + "/-/merge_requests"
+    open_url_in_browser(url)
+
+
+def get_remote_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    branch_to_use = arg2
+
+    if branch_to_use is None:
+        branch_to_use = get_current_branch()
+
+    remote_top_commit = get_remote_branch_top_commit_details(branch_to_use, env_variables)
+
+    if remote_top_commit is None:
+        print("Remote branch details not found")
+    else:
+        commit_id = remote_top_commit['id']
+        print("::: %s :::" % commit_id)
+
+
 def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
     if branch_to_use is None:
@@ -882,6 +903,11 @@ def get_cwd_name():
 
 def get_repo_url():
     process_output = s_run_process_and_get_output('git config remote.origin.url')
+
+    if str.strip(process_output) == "":
+        print("Not a git repo: [%s]" % os.getcwd())
+        err_exit()
+
     return 'https://' + process_output.split("@")[1].replace(":", "/")[:-5]
 
 def run_process_and_get_output(command_list, exit_on_failure=False):
@@ -1006,7 +1032,9 @@ if __name__ == "__main__":
         get_cmd("merge-staging","Merge to Staging",                     "non", merge_to_staging, True),
         get_cmd("merge-master","Merge to Master",                   "non", merge_to_master, True),
         get_cmd("branch-out","Create new branch out of master",     "non", branch_out_from_master, True),
-        get_cmd("dock",      "docker helper",     "non",                   docker_helper, False)
+        get_cmd("dock",      "docker helper",     "non",                   docker_helper, False),
+        get_cmd("mr", "open merge requests for the repo", "non", open_mr_page, False),
+        get_cmd("gtc", "get remote top commit", "non", get_remote_top_commit, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]

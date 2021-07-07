@@ -6,8 +6,8 @@ import uuid
 from datetime import datetime, timedelta
 import common_utils
 from pathlib import Path
+import system_config_reader
 
-CONFIG_DATA = None
 
 def load_json_files(json_files):
     data = []
@@ -258,7 +258,7 @@ def list_alarms(params, arg1, arg2):
 
 
 def get_alarms_directory():
-    return CONFIG_DATA['REMINDERS_DROP_DIR']
+    return system_config_reader.get_config('REMINDERS_DROP_DIR')
 
 
 def get_all_alarms():
@@ -306,7 +306,7 @@ COMMAND_SYNTAX = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -m
 
 
 def fire_alarm(alarm_data):
-    python_exec_path = CONFIG_DATA["PYTHON_EXEC_PATH"]
+    python_exec_path = system_config_reader.get_config("PYTHON_EXEC_PATH")
     full_path_of_current_file = os.path.abspath(__file__)
     title = alarm_data[ALARM_TITLE]
     command = COMMAND_SYNTAX % (
@@ -343,9 +343,6 @@ def display_primary_operations(primary_operations):
 
 if __name__ == "__main__":
     common_credentials_file_path = os.path.join(str(Path.home()), ".common.creds.json")
-    config_data_content = common_utils.read_file_contents(common_credentials_file_path)
-    # global CONFIG_DATA
-    CONFIG_DATA = json.loads(config_data_content)
 
     primary_operations = [
         get_cmd("in", "Create reminder in [10min, 10m, 1h, 5h, 6hours, 11hour].", create_in_alarm),
