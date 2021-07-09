@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from datetime import datetime, timedelta
 import requests
-from requests.exceptions import InvalidURL, MissingSchema
+from requests.exceptions import InvalidURL, MissingSchema, InvalidSchema
 import system_config_reader
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -58,10 +58,7 @@ def whether_watcher_time_expired(watcher_data):
     watcher_expiry_time = created_at_date + timedelta(hours=5)
     current_time = datetime.now()
 
-    if current_time > watcher_expiry_time:
-        return False
-
-    return True
+    return current_time > watcher_expiry_time
 
 
 def whether_watcher_is_active(watcher_data):
@@ -114,7 +111,7 @@ def fetch_job_status(watcher_data):
             if result == "FAILURE":
                 return JOB_STATUS_FAILED
 
-    except (InvalidURL, MissingSchema) as e:
+    except (InvalidURL, MissingSchema, InvalidSchema) as e:
         # Stopped here
         return JOB_STATUS_ERROR
 
@@ -172,12 +169,28 @@ def determine_watcher_action(watcher_data):
                     print("job %s has been notified more than twice, hence closing" % watcher_job_id)
                     return None # No notification
 
-                if FIELD_NOTIFICATION_TIMES not in watcher_data:
-                    watcher_data[FIELD_NOTIFICATION_TIMES] = []
+                if notification_times < 1:
+                    if FIELD_NOTIFICATION_TIMES not in watcher_data:
+                        watcher_data[FIELD_NOTIFICATION_TIMES] = []
 
-                watcher_data[FIELD_NOTIFICATION_TIMES].append(date_to_string(datetime.now()))
-                print("job %s is completed, hence notifiing" % watcher_job_id)
-                return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_SUCCESS)
+                    watcher_data[FIELD_NOTIFICATION_TIMES].append(date_to_string(datetime.now()))
+                    save_watcher(watcher_data)
+                    print("job %s is completed, hence notifying" % watcher_job_id)
+                    return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_SUCCESS)
+                else:
+                    already_delivered_notifications = watcher_data[FIELD_NOTIFICATION_TIMES]
+                    last_notification_time_str = already_delivered_notifications[notification_times-1]
+                    last_notification_time = string_to_date(last_notification_time_str)
+                    snooze_period = last_notification_time + timedelta(minutes=15)
+                    current_time = datetime.now()
+                    if current_time > snooze_period:
+                        print("Snooze completed for the job: %s hence re-notifying" % watcher_job_id)
+                        watcher_data[FIELD_NOTIFICATION_TIMES].append(date_to_string(datetime.now()))
+                        save_watcher(watcher_data)
+                        return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_SUCCESS)
+                    else:
+                        print("Snooze period not over yet, hence not reporting alarm")
+                        return None
 
             print("Unexpected job status for: %s" % watcher_job_id)
             common_utils.err_exit()
@@ -229,10 +242,39 @@ def bot_notify(params, arg1, arg2):
     num_failed = 0
     num_successful = 0
     num_errored = 0
+    num_expired = 0
     for watcher_item in watchers_list:
         notification_data = determine_watcher_action(watcher_item)
 
         if notification_data is not None:
+            if notification_data == NOTIFICATION_CATEGORY_SUCCESS:
+                num_successful = num_successful + 1
+            if notification_data == NOTIFICATION_CATEGORY_FAILURE:
+                num_failed = num_failed + 1
+            if notification_data == NOTIFICATION_CATEGORY_ERROR:
+                num_errored = num_errored + 1
+            if notification_data == NOTIFICATION_CATEGORY_JOB_POLL_EXPIRED:
+                num_expired = num_expired + 1
+
+    total = num_successful + num_failed + num_expired + num_errored
+    if total < 1:
+        print("No notifyable watchers")
+        return None
+    else:
+        print("There are %d notifyable watchers" % total)
+
+    text = ""
+    if num_successful > 0:
+        text = text + ("Successful: %d " % num_successful)
+    if num_failed > 0:
+        text = text + ("Failed: %d " % num_failed)
+    if num_expired > 0:
+        text = text + ("Expired: %d " % num_expired)
+    if num_errored > 0:
+        text = text + ("Errored: %d " % num_errored)
+
+    command_syntax = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute "open -a Terminal"' % (text, "Watcher Notify", ("Total: %d" % total))
+    os.system(command_syntax)
 
 
 
@@ -249,7 +291,7 @@ def save_watcher(watcher_data):
 
 
 def get_watcher_directory():
-    return system_config_reader.get("WATCHER_DROP_DIR")
+    return system_config_reader.get_config("WATCHER_DROP_DIR")
 
 
 def generate_new_id():
