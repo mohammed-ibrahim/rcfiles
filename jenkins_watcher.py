@@ -75,7 +75,6 @@ WATCHER_ACTION_DO_KEEP_POLLING = "keepPolling"
 WATCHER_ACTION_DO_NOTIFY_SUCCESS = "notifySuccess"
 WATCHER_ACTION_DO_NOTIFY_FAILURE = "notifyFailure"
 
-
 NOTIFICATION_CATEGORY_SUCCESS = 1
 NOTIFICATION_CATEGORY_FAILURE = 2
 NOTIFICATION_CATEGORY_ERROR = 3
@@ -141,7 +140,7 @@ def determine_watcher_action(watcher_data):
 
             print("Looking for api status for %s is %s" % (watcher_job_id, job_status_result))
             if job_status_result == JOB_STATUS_PENDING:
-                return None # do nothing if job not completed
+                return None  # do nothing if job not completed
 
             if job_status_result == JOB_STATUS_FAILED:
                 watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
@@ -167,7 +166,7 @@ def determine_watcher_action(watcher_data):
                     watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_NOTIFIED_MORE_THAN_TWICE
                     save_watcher(watcher_data)
                     print("job %s has been notified more than twice, hence closing" % watcher_job_id)
-                    return None # No notification
+                    return None  # No notification
 
                 if notification_times < 1:
                     if FIELD_NOTIFICATION_TIMES not in watcher_data:
@@ -179,7 +178,7 @@ def determine_watcher_action(watcher_data):
                     return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_SUCCESS)
                 else:
                     already_delivered_notifications = watcher_data[FIELD_NOTIFICATION_TIMES]
-                    last_notification_time_str = already_delivered_notifications[notification_times-1]
+                    last_notification_time_str = already_delivered_notifications[notification_times - 1]
                     last_notification_time = string_to_date(last_notification_time_str)
                     snooze_period = last_notification_time + timedelta(minutes=15)
                     current_time = datetime.now()
@@ -197,6 +196,7 @@ def determine_watcher_action(watcher_data):
 
     print("Unexpected state for jobid: %s" % watcher_job_id)
     common_utils.err_exit()
+
 
 def list_watchers(params, arg1, arg2):
     watchers_list = get_complete_watch_list()
@@ -273,10 +273,9 @@ def bot_notify(params, arg1, arg2):
     if num_errored > 0:
         text = text + ("Errored: %d " % num_errored)
 
-    command_syntax = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute "open -a Terminal"' % (text, "Watcher Notify", ("Total: %d" % total))
+    command_syntax = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute "open -a Terminal"' % (
+    text, "Watcher Notify", ("Total: %d" % total))
     os.system(command_syntax)
-
-
 
 
 def get_file_path_from_id(watcher_id):
