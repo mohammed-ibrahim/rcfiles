@@ -94,7 +94,7 @@ JOB_STATUS_ERROR = "error"
 
 def fetch_job_status(watcher_data):
     url = watcher_data[FIELD_URL]
-    json_api_url = url + "/api/json"
+    json_api_url = url.strip("/") + "/api/json"
 
     try:
         response = requests.get(json_api_url)
