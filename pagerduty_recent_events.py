@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import urllib.parse
 import urllib
 import pagerduty_json_csv
+import system_config_reader
 
 def pull_env_var(key):
     env_value = os.environ.get(key, None)
@@ -114,8 +115,8 @@ def pull_pagerduty_events(startTime, endTime, service_ids_list, pagerduty_user_t
         write_to_file(file_name=file_name, content=json.dumps(response, indent=4))
 
 if __name__ == "__main__":
-    pagerduty_user_token = pull_env_var("PD_USER_TOKEN")
-    escalation_policies = pull_env_var("PD_ESC_POLICIES_CSV")
+    pagerduty_user_token = system_config_reader.get_config("PD_USER_TOKEN")
+    escalation_policies = system_config_reader.get_config("PD_ESC_POLICIES_CSV")
 
     service_ids_list = list()
 
