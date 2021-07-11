@@ -2,6 +2,7 @@ import json
 import common_utils
 import os
 from pathlib import Path
+import sys
 from datetime import datetime, timedelta
 import requests
 from requests.exceptions import InvalidURL, MissingSchema, InvalidSchema
@@ -101,11 +102,15 @@ def fetch_job_status(watcher_data):
             return JOB_STATUS_ERROR
         else:
             data = json.loads(response.content)
+
+            if 'result' not in data:
+                return JOB_STATUS_PENDING
+
             result = data['result']
 
             if result == "SUCCESS":
                 return JOB_STATUS_COMPLETED
-            if result is None:
+            if result is None or result.strip() == "":
                 return JOB_STATUS_PENDING
             if result == "FAILURE":
                 return JOB_STATUS_FAILED
@@ -115,6 +120,18 @@ def fetch_job_status(watcher_data):
         return JOB_STATUS_ERROR
 
     return JOB_STATUS_ERROR
+
+
+def update_watcher_data_to_disk_and_return_notification_data(watcher_data, watcher_status, watcher_reason, notification_category):
+    if watcher_status is not None:
+        watcher_data[FIELD_STATUS] = watcher_status
+
+    if watcher_reason is not None:
+        watcher_data[FIELD_REASON] = watcher_reason
+
+    save_watcher(watcher_data)
+
+    return notification_category
 
 
 def determine_watcher_action(watcher_data):
@@ -129,32 +146,23 @@ def determine_watcher_action(watcher_data):
         expired = whether_watcher_time_expired(watcher_data)
 
         if expired:
-            watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
-            watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_EXPIRED
-            save_watcher(watcher_data)
             print("Job %s has expired" % watcher_job_id)
-            return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_JOB_POLL_EXPIRED)
+            return update_watcher_data_to_disk_and_return_notification_data(watcher_data, FIELD_VALUE_FOR_STATUS_CLOSED, FIELD_VALUE_FOR_REASON_EXPIRED, NOTIFICATION_CATEGORY_JOB_POLL_EXPIRED)
         else:
             print("Looking for api status for %s" % watcher_job_id)
             job_status_result = fetch_job_status(watcher_data)
 
-            print("Looking for api status for %s is %s" % (watcher_job_id, job_status_result))
+            print("Api status for %s is %s" % (watcher_job_id, job_status_result))
             if job_status_result == JOB_STATUS_PENDING:
                 return None  # do nothing if job not completed
 
             if job_status_result == JOB_STATUS_FAILED:
-                watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
-                watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_FAILED
-                save_watcher(watcher_data)
                 print("job %s has failed closing and marking notification" % watcher_job_id)
-                return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_FAILURE)
+                return update_watcher_data_to_disk_and_return_notification_data(watcher_data, FIELD_VALUE_FOR_STATUS_CLOSED, FIELD_VALUE_FOR_REASON_FAILED, NOTIFICATION_CATEGORY_FAILURE)
 
             if job_status_result == JOB_STATUS_ERROR:
-                watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
-                watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_ERROR
-                save_watcher(watcher_data)
                 print("job %s has errors" % watcher_job_id)
-                return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_ERROR)
+                return update_watcher_data_to_disk_and_return_notification_data(watcher_data, FIELD_VALUE_FOR_STATUS_CLOSED, FIELD_VALUE_FOR_REASON_ERROR, NOTIFICATION_CATEGORY_ERROR)
 
             if job_status_result == JOB_STATUS_COMPLETED:
                 notification_times = 0
@@ -162,20 +170,16 @@ def determine_watcher_action(watcher_data):
                     notification_times = len(watcher_data[FIELD_NOTIFICATION_TIMES])
 
                 if notification_times >= 3:
-                    watcher_data[FIELD_STATUS] = FIELD_VALUE_FOR_STATUS_CLOSED
-                    watcher_data[FIELD_REASON] = FIELD_VALUE_FOR_REASON_NOTIFIED_MORE_THAN_TWICE
-                    save_watcher(watcher_data)
                     print("job %s has been notified more than twice, hence closing" % watcher_job_id)
-                    return None  # No notification
+                    return update_watcher_data_to_disk_and_return_notification_data(watcher_data, FIELD_VALUE_FOR_STATUS_CLOSED, FIELD_VALUE_FOR_REASON_NOTIFIED_MORE_THAN_TWICE, None)
 
                 if notification_times < 1:
                     if FIELD_NOTIFICATION_TIMES not in watcher_data:
                         watcher_data[FIELD_NOTIFICATION_TIMES] = []
 
                     watcher_data[FIELD_NOTIFICATION_TIMES].append(date_to_string(datetime.now()))
-                    save_watcher(watcher_data)
                     print("job %s is completed, hence notifying" % watcher_job_id)
-                    return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_SUCCESS)
+                    return update_watcher_data_to_disk_and_return_notification_data(watcher_data, None, None, NOTIFICATION_CATEGORY_SUCCESS)
                 else:
                     already_delivered_notifications = watcher_data[FIELD_NOTIFICATION_TIMES]
                     last_notification_time_str = already_delivered_notifications[notification_times - 1]
@@ -185,8 +189,7 @@ def determine_watcher_action(watcher_data):
                     if current_time > snooze_period:
                         print("Snooze completed for the job: %s hence re-notifying" % watcher_job_id)
                         watcher_data[FIELD_NOTIFICATION_TIMES].append(date_to_string(datetime.now()))
-                        save_watcher(watcher_data)
-                        return get_notification_body(watcher_data, NOTIFICATION_CATEGORY_SUCCESS)
+                        return update_watcher_data_to_disk_and_return_notification_data(watcher_data, None, None, NOTIFICATION_CATEGORY_SUCCESS)
                     else:
                         print("Snooze period not over yet, hence not reporting alarm")
                         return None
@@ -243,18 +246,27 @@ def bot_notify(params, arg1, arg2):
     num_successful = 0
     num_errored = 0
     num_expired = 0
+
+    non_errored_urls = []
+
     for watcher_item in watchers_list:
         notification_data = determine_watcher_action(watcher_item)
 
         if notification_data is not None:
             if notification_data == NOTIFICATION_CATEGORY_SUCCESS:
                 num_successful = num_successful + 1
+                non_errored_urls.append(watcher_item[FIELD_URL])
+
             if notification_data == NOTIFICATION_CATEGORY_FAILURE:
                 num_failed = num_failed + 1
+                non_errored_urls.append(watcher_item[FIELD_URL])
+
             if notification_data == NOTIFICATION_CATEGORY_ERROR:
                 num_errored = num_errored + 1
+
             if notification_data == NOTIFICATION_CATEGORY_JOB_POLL_EXPIRED:
                 num_expired = num_expired + 1
+                non_errored_urls.append(watcher_item[FIELD_URL])
 
     total = num_successful + num_failed + num_expired + num_errored
     if total < 1:
@@ -273,9 +285,15 @@ def bot_notify(params, arg1, arg2):
     if num_errored > 0:
         text = text + ("Errored: %d " % num_errored)
 
-    command_syntax = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute "open -a Terminal"' % (
-    text, "Watcher Notify", ("Total: %d" % total))
-    os.system(command_syntax)
+    if num_errored == total:
+        command_syntax = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute "open -a Terminal"' % (text, "Watcher Notify", ("Total: %d" % total))
+        os.system(command_syntax)
+    else:
+        formatted_urls = ['\"' + u + '\"' for u in non_errored_urls]
+        joined_urls = " ".join(formatted_urls)
+        command_syntax = """/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute 'open -a \"Google Chrome\" %s'""" % (text, "Watcher Notify", ("Total: %d" % total), joined_urls)
+        # print(command_syntax)
+        os.system(command_syntax)
 
 
 def get_file_path_from_id(watcher_id):
@@ -337,6 +355,11 @@ if __name__ == "__main__":
 
     primary_operation_codes = [x['code'] for x in primary_operations]
     mode = common_utils.get_param(1)
+
+    if mode is not None and mode.startswith("http"):
+        create_watcher(common_utils.get_params(), common_utils.get_param(1), common_utils.get_param(3))
+        sys.exit(0)
+
     if mode is None:
         list_watchers(common_utils.get_params(), common_utils.get_param(2), common_utils.get_param(3))
         common_utils.err_exit()
