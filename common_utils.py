@@ -12,6 +12,17 @@ def pull_env_var(key):
     return env_value
 
 
+def txt_substitute(input, replacement_vars):
+    text = input
+    for key in replacement_vars:
+        rkey = "{%s}" % key
+        rval = replacement_vars[key]
+
+        text = text.replace(rkey, rval)
+
+    return text
+
+
 def load_json_files(json_files):
     data = []
 

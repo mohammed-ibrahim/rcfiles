@@ -24,6 +24,7 @@ FIELD_VALUE_FOR_REASON_EXPIRED = "Watcher time expired"
 FIELD_VALUE_FOR_REASON_FAILED = "Job Failed"
 FIELD_VALUE_FOR_REASON_SUCCESS = "Job Succeeded"
 FIELD_VALUE_FOR_REASON_ERROR = "Job Errored"
+FIELD_VALUE_FOR_REASON_USER_CLICKED = "User Clicked"
 FIELD_VALUE_FOR_REASON_NOTIFIED_MORE_THAN_TWICE = "Notified more than twice"
 
 
@@ -65,10 +66,12 @@ def whether_watcher_time_expired(watcher_data):
 def whether_watcher_is_active(watcher_data):
     status = watcher_data[FIELD_STATUS]
 
-    if status in [FIELD_VALUE_FOR_STATUS_CLOSED]:
-        return False
+    return status == FIELD_VALUE_FOR_STATUS_CLOSED
 
-    return whether_watcher_time_expired(watcher_data)
+    # if status in [FIELD_VALUE_FOR_STATUS_CLOSED]:
+    #     return False
+    #
+    # return whether_watcher_time_expired(watcher_data)
 
 
 WATCHER_ACTION_DO_NOTHING = "nothing"
@@ -201,6 +204,24 @@ def determine_watcher_action(watcher_data):
     common_utils.err_exit()
 
 
+def cwob(params, arg1, arg2):
+    if arg1 is None:
+        print("ids must be supplied")
+        sys.exit(1)
+
+    watcher_ids = arg1.split(",")
+    watcher_dir = get_watcher_directory()
+    json_files = [os.path.join(watcher_dir, wid + ".json") for wid in watcher_ids]
+    required_watchers_data = common_utils.load_json_files(json_files)
+
+    for watcher_data in required_watchers_data:
+        update_watcher_data_to_disk_and_return_notification_data(watcher_data, FIELD_VALUE_FOR_STATUS_CLOSED, FIELD_VALUE_FOR_REASON_USER_CLICKED, 0)
+
+    urls_to_open = [ '"' + watcher[FIELD_URL] + '"' for watcher in required_watchers_data]
+    command = "open -a \"Google Chrome\" " + " ".join(urls_to_open)
+    os.system(command)
+
+
 def list_watchers(params, arg1, arg2):
     watchers_list = get_complete_watch_list()
     show_all = True if arg1 == "-a" else False
@@ -247,7 +268,7 @@ def bot_notify(params, arg1, arg2):
     num_errored = 0
     num_expired = 0
 
-    non_errored_urls = []
+    non_errored_watchers = []
 
     for watcher_item in watchers_list:
         notification_data = determine_watcher_action(watcher_item)
@@ -255,18 +276,18 @@ def bot_notify(params, arg1, arg2):
         if notification_data is not None:
             if notification_data == NOTIFICATION_CATEGORY_SUCCESS:
                 num_successful = num_successful + 1
-                non_errored_urls.append(watcher_item[FIELD_URL])
+                non_errored_watchers.append(watcher_item)
 
             if notification_data == NOTIFICATION_CATEGORY_FAILURE:
                 num_failed = num_failed + 1
-                non_errored_urls.append(watcher_item[FIELD_URL])
+                non_errored_watchers.append(watcher_item)
 
             if notification_data == NOTIFICATION_CATEGORY_ERROR:
                 num_errored = num_errored + 1
 
             if notification_data == NOTIFICATION_CATEGORY_JOB_POLL_EXPIRED:
                 num_expired = num_expired + 1
-                non_errored_urls.append(watcher_item[FIELD_URL])
+                non_errored_watchers.append(watcher_item)
 
     total = num_successful + num_failed + num_expired + num_errored
     if total < 1:
@@ -289,11 +310,23 @@ def bot_notify(params, arg1, arg2):
         command_syntax = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute "open -a Terminal"' % (text, "Watcher Notify", ("Total: %d" % total))
         os.system(command_syntax)
     else:
-        formatted_urls = ['\"' + u + '\"' for u in non_errored_urls]
-        joined_urls = " ".join(formatted_urls)
-        command_syntax = """/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute 'open -a \"Google Chrome\" %s'""" % (text, "Watcher Notify", ("Total: %d" % total), joined_urls)
-        # print(command_syntax)
-        os.system(command_syntax)
+        ids = [id[FIELD_WATCHER_ID] for id in non_errored_watchers]
+        python_exec_path = system_config_reader.get_config("PYTHON_EXEC_PATH")
+        full_path_of_current_file = os.path.abspath(__file__)
+
+        subs_data = {
+            "title": text,
+            "subtitle": "Watcher Notify",
+            "message": ("Total: %d" % total),
+            "python_path": python_exec_path,
+            "current_file_path": full_path_of_current_file,
+            "ids_param_to_cwob": ",".join(ids)
+        }
+
+        command_syntax = """/usr/local/bin/terminal-notifier -title "{title}" -subtitle "{subtitle}" -message "{message}" -execute '{python_path} {current_file_path} cwob {ids_param_to_cwob}'"""
+        command = common_utils.txt_substitute(command_syntax, subs_data)
+        print(command)
+        # os.system(command_syntax)
 
 
 def get_file_path_from_id(watcher_id):
@@ -351,6 +384,7 @@ if __name__ == "__main__":
     primary_operations = [
         get_cmd("c", "Create jenkins watcher", create_watcher),
         get_cmd("bot_notify", "bot notify", bot_notify),
+        get_cmd("cwob", "close the watcher and open in browser", cwob),
         get_cmd("list", "list", list_watchers)]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
