@@ -325,8 +325,8 @@ def bot_notify(params, arg1, arg2):
 
         command_syntax = """/usr/local/bin/terminal-notifier -title "{title}" -subtitle "{subtitle}" -message "{message}" -execute '{python_path} {current_file_path} cwob {ids_param_to_cwob}'"""
         command = common_utils.txt_substitute(command_syntax, subs_data)
-        print(command)
-        # os.system(command_syntax)
+        # print(command)
+        os.system(command)
 
 
 def get_file_path_from_id(watcher_id):

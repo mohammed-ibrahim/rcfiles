@@ -19,6 +19,16 @@ def read_file_contents(file_path):
 
     return contents
 
+def get_alarm_arn_if_present(i):
+
+    if 'first_trigger_log_entry' in i:
+        first_log_entry = i['first_trigger_log_entry']
+        if 'channel' in first_log_entry:
+            channel = first_log_entry['channel']
+            if 'details' in channel and 'AlarmArn' in channel['details']:
+                return channel['details']['AlarmArn']
+
+    return "not found"
 
 def get_row_from_incident(i):
     title = i['title']
@@ -27,8 +37,9 @@ def get_row_from_incident(i):
     assigned_via = i['assigned_via']
     id = i['id']
     last_update_by = i['last_status_change_by']['summary']
+    alarm_arn = get_alarm_arn_if_present(i)
 
-    return [title, service, created_at, assigned_via, id, last_update_by]
+    return [title, service, created_at, assigned_via, id, last_update_by, alarm_arn]
 
 
 def write_json_file_entries_to_csv(full_json_file_path, csv_writer):
