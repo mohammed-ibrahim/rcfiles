@@ -120,7 +120,7 @@ def copy_full_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
     file_name = "%s.%s.%s.diff" % (
-    get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
+        get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, process_diff_file(head_diff))
     pyperclip.copy("vi %s" % file_name)
     # open_file_in_editor(file_name)
@@ -129,7 +129,7 @@ def head(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 def shead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     head_diff = s_run_process_and_get_output('git show HEAD')
     file_name = "%s.%s.%s.diff" % (
-    get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
+        get_qualifier_with_ctx(env_variables), get_head_commit_id(), slugify(get_current_branch()))
     write_to_file(file_name, head_diff)
     return file_name
 
@@ -165,16 +165,16 @@ def lhead(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 #     pyperclip.copy(" ".join(filtered_lines))
 
 def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    current_branch = arg2
-    if current_branch is None:
-        current_branch = get_current_branch()
+    force_plain_branch = True if "-p" in params else False
+    filtered_params = [x for x in params if x != "-p"]
+    current_branch = get_current_branch() if len(filtered_params) < 1 else filtered_params[0]
 
     required_url = None
-    if current_branch in ["master", "dev/staging"]:
-        required_url = "%s/commits/%s" % (get_repo_url(), current_branch)
+    if current_branch in ["master", "dev/staging"] or force_plain_branch:
+        required_url = "%s/-/commits/%s" % (get_repo_url(), current_branch)
     else:
         current_user = get_current_user()
-        required_url = "%s/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
+        required_url = "%s/-/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
 
     open_url_in_browser(required_url)
 
@@ -486,7 +486,7 @@ def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     if local_commmit_id != remote_commit_id:
         print("Local commit: %s Remote commit: %s differ for branch: %s" % (
-        local_commmit_id, remote_commit_id, master_branch_name))
+            local_commmit_id, remote_commit_id, master_branch_name))
         err_exit()
 
     s_run_process_and_get_output('git checkout -b %s' % branch_to_use)
@@ -494,12 +494,12 @@ def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     print("Branch: %s is ready." % branch_to_use)
 
 
-DOCKER_FORMAT = """
-docker exec -it %s /bin/bash
-docker logs %s
-docker logs -f %s
-docker logs %s 2>&1 > ~/out.txt
-"""
+DOCKER_SSH_COMMAND = "docker exec -it %s /bin/bash"
+DOCKER_LOGS_COMMAND = "docker logs %s"
+DOCKER_LOGS_TAIL_COMMAND = "docker logs -f %s"
+DOCKER_LOGS_REROUTE_COMMAND = "docker logs %s 2>&1 > ~/out.txt"
+
+DOCKER_FORMAT = NEW_LINE + NEW_LINE + DOCKER_SSH_COMMAND + NEW_LINE + DOCKER_LOGS_COMMAND + NEW_LINE + DOCKER_LOGS_TAIL_COMMAND + NEW_LINE + DOCKER_LOGS_REROUTE_COMMAND + NEW_LINE + NEW_LINE
 
 
 def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -517,6 +517,7 @@ def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     keyword = arg2
     short_id = None
     for c in containers:
+        # print("%s :: %s" % (str(c.id), str(c.name)))
         if (keyword in c.id) or (keyword in c.name):
             short_id = c.short_id
             break
@@ -527,12 +528,29 @@ def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     print(DOCKER_FORMAT % (short_id, short_id, short_id, short_id))
 
+    if arg3 is None or arg3 == "ssh":
+        text = DOCKER_SSH_COMMAND % short_id
+        pyperclip.copy(text)
+        print("Copied: " + text)
+
+    if arg3 in ["log", "logs"]:
+        text = DOCKER_LOGS_COMMAND % short_id
+        pyperclip.copy(text)
+        print("Copied: " + text)
+
+    if arg3 == "logf":
+        text = DOCKER_LOGS_TAIL_COMMAND % short_id
+        pyperclip.copy(text)
+        print("Copied: " + text)
+
 
 def open_mr_page(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     repo_url = get_repo_url()
     url = repo_url + "/-/merge_requests"
     open_url_in_browser(url)
 
+def open_current_folder(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    run_process_and_get_output(["/usr/bin/open", "-a", "finder", "."])
 
 def get_remote_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
@@ -547,6 +565,18 @@ def get_remote_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     else:
         commit_id = remote_top_commit['id']
         print("::: %s :::" % commit_id)
+
+
+COMMIT_TEMPLATE = """
+Testing Done: <See Review>
+Bug Number: <ticket-number>
+Reviewed by: <See Review>
+Review URL:"""
+
+
+def copy_commit_template(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    pyperclip.copy(COMMIT_TEMPLATE)
+    print("Copied: " + COMMIT_TEMPLATE)
 
 
 def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -664,11 +694,11 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
 
     if source_branch_local_commmit_id != source_branch_remote_commit_id:
         print("Local commit: %s Remote commit: %s differ for branch: %s" % (
-        source_branch_local_commmit_id, source_branch_remote_commit_id, source_branch_name))
+            source_branch_local_commmit_id, source_branch_remote_commit_id, source_branch_name))
         err_exit()
 
     print("Commit id matches remote and local for branch: %s commit: %s" % (
-    source_branch_name, source_branch_remote_commit_id))
+        source_branch_name, source_branch_remote_commit_id))
     source_branch_title = source_branch_remote_commit_details['title']
     user_input = input(
         "Remote change are related to ::: %s ::: Are you sure you want to continue (y/n)?" % source_branch_title)
@@ -690,11 +720,11 @@ def resolve_pre_merge(source_branch_name, target_branch_name, env_variables):
 
     if target_branch_local_commit_id != target_branch_remote_commit_id:
         print("Local commit: %s Remote commit: %s differ for branch: %s" % (
-        target_branch_local_commit_id, target_branch_remote_commit_id, target_branch_name))
+            target_branch_local_commit_id, target_branch_remote_commit_id, target_branch_name))
         err_exit()
 
     print("Commit id matches remote and local for branch: %s commit: %s" % (
-    target_branch_name, target_branch_remote_commit_id))
+        target_branch_name, target_branch_remote_commit_id))
 
     merge_command_template = "git merge origin/topic/{user}/{branch} --no-ff"
     merge_command = txt_substitute(merge_command_template, {'user': get_current_user(), 'branch': source_branch_name})
@@ -907,7 +937,7 @@ def get_remote_branch_top_commit_details(branch_name, env_variables):
     }
 
     gitlab_api = "https://%s/api/v4/projects/%s/repository/commits/%s" % (
-    gitlab_domain, get_gitlab_api_project_key(), url_encode(remote_branch))
+        gitlab_domain, get_gitlab_api_project_key(), url_encode(remote_branch))
     req = requests.get(gitlab_api, headers=header)
     status_code = req.status_code
 
@@ -1072,11 +1102,17 @@ if __name__ == "__main__":
 
     primary_operations = [
         get_cmd("ub", "Update Branch Commands.", "non", update_branch, False),
+
         get_cmd("j", "Copy full branch for Jenkins Command", "non", copy_full_branch, True),
+        get_cmd("copy-branch", "Copy full branch for Jenkins Command", "non", copy_full_branch, True),
+
         get_cmd("head", "Save head commit & Open in editor.", "non", head, False),
         get_cmd("shead", "Save head commit patch to backup.", "non", shead, False),
         get_cmd("lhead", "List file in head commit.", "non", lhead, False),
+
         get_cmd("ob", "Open Branch", "non", open_branch, False),
+        get_cmd("open-branch", "Open Branch", "non", open_branch, False),
+
         get_cmd("url", "Save url output to file", "non", save_url, False),
         get_cmd("curl", "Save curl output to file", "non", save_curl, False),
         get_cmd("diff", "Save git diff", "non", save_diff, False),
@@ -1091,7 +1127,10 @@ if __name__ == "__main__":
         get_cmd("ctc", "Compare top commit with remote top", "non", compare_top_commit, False),
         # get_cmd("en",       "Enlist the branch",                    "non", enlist_branches, False),
         get_cmd("jira", "Open Jira Ticket", "non", open_jira_ticket, False),
+
         get_cmd("or", "Open Repo", "non", open_repository, False),
+        get_cmd("open-repo", "Open Repo", "non", open_repository, False),
+
         get_cmd("mock", "Load all mocks", "non", load_all_mocks, False),
         get_cmd("am", "Copy the amend code", "non", copy_amend, False),
         get_cmd("ame", "Copy the amend code without edit", "non", copy_amend_no_edit, False),
@@ -1101,9 +1140,14 @@ if __name__ == "__main__":
         get_cmd("merge-staging", "Merge to Staging", "non", merge_to_staging, True),
         get_cmd("merge-master", "Merge to Master", "non", merge_to_master, True),
         get_cmd("branch-out", "Create new branch out of master", "non", branch_out_from_master, True),
-        get_cmd("dock", "docker helper", "non", docker_helper, False),
-        get_cmd("mr", "open merge requests for the repo", "non", open_mr_page, False),
-        get_cmd("gtc", "get remote top commit", "non", get_remote_top_commit, False)
+        get_cmd("docker", "docker helper", "non", docker_helper, False),
+        get_cmd("open-merge-requests", "open merge requests for the repo", "non", open_mr_page, False),
+        get_cmd("current-folder", "open merge requests for the repo", "non", open_current_folder, False),
+        get_cmd("cf", "open merge requests for the repo", "non", open_current_folder, False),
+        get_cmd("gtc", "get remote top commit", "non", get_remote_top_commit, False),
+        get_cmd("get-remote-commit", "get remote top commit", "non", get_remote_top_commit, False),
+
+        get_cmd("copy-commit-template", "Copy commit template", "non", copy_commit_template, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]

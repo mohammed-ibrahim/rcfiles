@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import requests
 from requests.exceptions import InvalidURL, MissingSchema, InvalidSchema
 import system_config_reader
+import desktop_notification_helper
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
@@ -66,7 +67,7 @@ def whether_watcher_time_expired(watcher_data):
 def whether_watcher_is_active(watcher_data):
     status = watcher_data[FIELD_STATUS]
 
-    return status == FIELD_VALUE_FOR_STATUS_CLOSED
+    return status == FIELD_VALUE_FOR_STATUS_CREATED
 
     # if status in [FIELD_VALUE_FOR_STATUS_CLOSED]:
     #     return False
@@ -204,6 +205,15 @@ def determine_watcher_action(watcher_data):
     common_utils.err_exit()
 
 
+def cat_files(params, arg1, arg2):
+    watchers_list = get_complete_watch_list()
+    sorted_watcher_list = sorted(watchers_list, key=lambda x: int(x[FIELD_WATCHER_ID]))
+    for watch_item in sorted_watcher_list:
+        print(json.dumps(watch_item, indent=4))
+        print("\n\n--------------------------\n\n")
+    return None
+
+
 def cwob(params, arg1, arg2):
     if arg1 is None:
         print("ids must be supplied")
@@ -307,8 +317,9 @@ def bot_notify(params, arg1, arg2):
         text = text + ("Errored: %d " % num_errored)
 
     if num_errored == total:
-        command_syntax = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute "open -a Terminal"' % (text, "Watcher Notify", ("Total: %d" % total))
-        os.system(command_syntax)
+        # command_syntax = '/usr/local/bin/terminal-notifier -title "%s" -subtitle "%s" -message "%s" -execute "open -a Terminal"' % (text, "Watcher Notify", ("Total: %d" % total))
+        # os.system(command_syntax)
+        desktop_notification_helper.notify(common_utils.get_last_part_of_file(__file__), text + (" Total: %d" % total))
     else:
         ids = [id[FIELD_WATCHER_ID] for id in non_errored_watchers]
         python_exec_path = system_config_reader.get_config("PYTHON_EXEC_PATH")
@@ -323,10 +334,11 @@ def bot_notify(params, arg1, arg2):
             "ids_param_to_cwob": ",".join(ids)
         }
 
-        command_syntax = """/usr/local/bin/terminal-notifier -title "{title}" -subtitle "{subtitle}" -message "{message}" -execute '{python_path} {current_file_path} cwob {ids_param_to_cwob}'"""
-        command = common_utils.txt_substitute(command_syntax, subs_data)
+        # command_syntax = """/usr/local/bin/terminal-notifier -title "{title}" -subtitle "{subtitle}" -message "{message}" -execute '{python_path} {current_file_path} cwob {ids_param_to_cwob}'"""
+        # command = common_utils.txt_substitute(command_syntax, subs_data)
+        desktop_notification_helper.notify(common_utils.get_last_part_of_file(__file__), text + ("Total: %d" % total))
         # print(command)
-        os.system(command)
+        # os.system(command)
 
 
 def get_file_path_from_id(watcher_id):
@@ -385,6 +397,7 @@ if __name__ == "__main__":
         get_cmd("c", "Create jenkins watcher", create_watcher),
         get_cmd("bot_notify", "bot notify", bot_notify),
         get_cmd("cwob", "close the watcher and open in browser", cwob),
+        get_cmd("cat", "close the watcher and open in browser", cat_files),
         get_cmd("list", "list", list_watchers)]
 
     primary_operation_codes = [x['code'] for x in primary_operations]

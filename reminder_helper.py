@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import common_utils
 from pathlib import Path
 import system_config_reader
-
+import desktop_notification_helper
 
 def load_json_files(json_files):
     data = []
@@ -309,13 +309,30 @@ def fire_alarm(alarm_data):
     python_exec_path = system_config_reader.get_config("PYTHON_EXEC_PATH")
     full_path_of_current_file = os.path.abspath(__file__)
     title = alarm_data[ALARM_TITLE]
-    command = COMMAND_SYNTAX % (
-    title, "Click to Close (%s)" % alarm_data[ALARM_ID], "Reminder", python_exec_path, full_path_of_current_file, alarm_data[ALARM_ID])
-    print("Executing: " + command)
-    os.system(command)
+    # command = COMMAND_SYNTAX % (
+    # title, "Click to Close (%s)" % alarm_data[ALARM_ID], "Reminder", python_exec_path, full_path_of_current_file, alarm_data[ALARM_ID])
+    # print("Executing: " + command)
+    # os.system(command)
+    desktop_notification_helper.notify(common_utils.get_last_part_of_file(__file__), title)
     notification_time = date_to_string(datetime.now())
     alarm_data[ALARM_NOTIFICATION_TIMES].append(notification_time)
     save_alarm(alarm_data)
+
+
+def try_parse_int(alarm_id):
+    try:
+        return int(alarm_id)
+    except ValueError:
+        return 0
+
+
+def cat_files(params, arg1, arg2):
+    alarms = get_all_alarms()
+    sorted_alarms = sorted(alarms, key=lambda x: try_parse_int(x[ALARM_ID]))
+    for alarm_item in sorted_alarms:
+        print(json.dumps(alarm_item, indent=4))
+        print("\n\n--------------------------\n\n")
+    return None
 
 
 def bot_notify(params, arg1, arg2):
@@ -350,6 +367,7 @@ if __name__ == "__main__":
         get_cmd("delete", "delete alarms", delete_alarm),
         get_cmd("close", "close alarms", close_alarm),
         get_cmd("list", "list alarms", list_alarms),
+        get_cmd("cat", "close the watcher and open in browser", cat_files),
         get_cmd("bot_notify", "bot notify", bot_notify)]
     # get_cmd("display", "Save head commit & Open in editor.", display_alarms)]
     # get_cmd("bot_notify", "Should be used by cron/bot to check and display notification if required.", notify_if_required)]

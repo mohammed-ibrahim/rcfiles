@@ -66,3 +66,7 @@ def write_to_file(file_name, content):
         file_pointer.write(content)
 
     print("File write complete: " + file_name)
+
+
+def get_last_part_of_file(full_path):
+    return os.path.basename(os.path.normpath(full_path))
