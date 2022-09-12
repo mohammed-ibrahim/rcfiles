@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<div class="container">
+
+    <br/>
+    <table class="linkelement" border="1px" cellpadding="10px">
+        <tr>
+            <td>
+                <input id="searchSuggest" type="input" name="searchSuggest" onchange="onSearchChange()" />
+
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <button onclick="copyPassword('QnV0dG9uMQ==')">Button1</button>
+                <button onclick="copyPassword('QnV0dG9uMg==')">Button2</button> 
+
+            </td>
+        </tr>
+
+        <br/><br/>
+
+        <tr>
+            <td>
+                <button onclick="copyPassword('QnV0dG9uMQ==')">Button1</button>
+                <button onclick="copyPassword('QnV0dG9uMg==')">Button2</button> 
+
+            </td>
+        </tr>
+
+        <br/><br/>
+
+    </table>
+
+</div>
+
+<br/>
+<br/>
+
+<div class="container">
+    <p id="infomation_bar" class="linkelement">ASDF</p>
+</div>
+
+<div class="container">
+    <table class="linkelement" border="1px" cellpadding="10px">
+        <tr>
+            <td>
+                <textarea id="encryption-input"></textarea> <br/> <button onclick="encryptInputFromUser()" >Click To Encrypt</button>
+            </td>
+        </tr>
+    </table>
+</div>
+<script  type="text/javascript">
+    function copyTextValue(textValue) {
+        var elementHandle = document.getElementById("inputHolder");
+        elementHandle.value = textValue;
+        elementHandle.select();
+        elementHandle.setSelectionRange(0, 99999)
+        document.execCommand("copy");
+        elementHandle.value = "";
+    }
+
+    function onSearchChange() {
+        var searchSuggest = document.getElementById("searchSuggest");
+        var buttons = document.getElementsByTagName('button');
+
+        //console.log(buttons);
+
+        // for (var i = 0; i < buttons.length; i++) {
+        //     var button = buttons[i];
+        //     console.log("------------------------------------------");
+        //     console.log(button.innerHTML);
+        // }
+
+        var searchTerm = searchSuggest.value.toLowerCase();;
+
+        if (searchTerm.length > 2) {
+            for (var i = 0; i < buttons.length; i++) {
+                var button = buttons[i];
+                
+                console.log(button.innerHTML);
+
+                var innerHtml = button.innerHTML.toLowerCase();;
+                if (innerHtml.includes(searchTerm)) {
+                    button.style.color = "red";
+                } else {
+                    button.style.color = "black";
+                }
+            }            
+        } else {
+            console.log("Length of search term is less than 3");
+        }
+    }
+
+    function showInformationBar(text) {
+        var informationBar = document.getElementById("infomation_bar");
+        informationBar.innerHTML = text;
+        informationBar.style.visibility = 'visible';
+        setTimeout(hideInformationBar, 2000);
+    }
+
+    function hideInformationBar() {
+        var informationBar = document.getElementById("infomation_bar");
+        informationBar.style.visibility = 'hidden';
+    }
+
+    function markAllButtonsAsBlack() {
+        var buttons = document.getElementsByTagName('button');
+        for (var i = 0; i < buttons.length; i++) {
+            var button = buttons[i];
+            button.style.color = "black";
+        }
+    }
+
+    function copyPasswordOld(encryptedPass) {
+        var elementHandle = document.getElementById("inputHolder");
+        elementHandle.value = atob(encryptedPass);
+        elementHandle.select();
+        elementHandle.setSelectionRange(0, 99999)
+        document.execCommand("copy");
+        elementHandle.value = "";
+    }
+
+    function copyPassword(text) {
+        elem = document.createElement('textarea');
+        elem.value = atob(text);
+        document.body.appendChild(elem);
+        elem.select();
+        document.execCommand('copy');
+        document.body.removeChild(elem);
+
+        showInformationBar('Copied!');
+        markAllButtonsAsBlack();
+    }
+
+    function encryptInputFromUser() {
+        var inputHandle = document.getElementById("encryption-input");
+        var value = inputHandle.value;
+        inputHandle.value = btoa(value);
+    }
+
+
+</script>
+
+<style type="text/css">
+    .container {
+        text-align: center;
+    }
+    .linkelement {
+        display: inline-block;
+    }
+</style>
+</body>
+</html>
