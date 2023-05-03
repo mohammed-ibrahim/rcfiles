@@ -379,13 +379,15 @@ def load_all_mocks(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
 
 def copy_amend(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    is_safe_to_amend()
+    is_safe_to_amend(params)
     pyperclip.copy("git commit --amend")
+    print("Copied :: git commit --amend")
 
 
 def copy_amend_no_edit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    is_safe_to_amend()
+    is_safe_to_amend(params)
     pyperclip.copy("git commit --amend --no-edit")
+    print("Copied :: git commit --amend --no-edit")
 
 
 def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -549,8 +551,10 @@ def open_mr_page(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     url = repo_url + "/-/merge_requests"
     open_url_in_browser(url)
 
+
 def open_current_folder(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     run_process_and_get_output(["/usr/bin/open", "-a", "finder", "."])
+
 
 def get_remote_top_commit(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     branch_to_use = arg2
@@ -577,6 +581,125 @@ Review URL:"""
 def copy_commit_template(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     pyperclip.copy(COMMIT_TEMPLATE)
     print("Copied: " + COMMIT_TEMPLATE)
+
+
+def search_esc_dir(search_term, esc_root_dir):
+    file_paths = []
+
+    search_term = search_term.lower()
+    for root, directories, files in os.walk(esc_root_dir):
+        for dir_name in directories:
+            if search_term in dir_name.lower():
+                dir_path = os.path.join(root, dir_name)
+                file_paths.append(dir_path)
+
+    return file_paths
+
+
+def open_esc(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    esc_dir = env_variables['ESC_DIRECTORY']
+
+    if arg2 is None:
+        print("Search term must be supplied")
+        err_exit()
+
+    file_paths = search_esc_dir(arg2, esc_dir)
+
+    if len(file_paths) < 1:
+        print("Not found!!!")
+        return None
+
+    for item in file_paths:
+        print("Found: " + item)
+
+    pyperclip.copy("open \"%s\"" % file_paths[0])
+    print("copied.")
+
+    return None
+
+
+def create_esc(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    esc_dir = env_variables['ESC_DIRECTORY']
+
+    if not os.path.isdir(esc_dir):
+        print("Task files directory: %s doesn't exists" % esc_dir)
+        err_exit()
+
+    if arg2 is None:
+        print("Target ESC dir must be supplied")
+        err_exit()
+
+    print("Supplied esc dir name: %s" % arg2)
+    target_file = os.path.join(esc_dir, arg2)
+    if os.path.isdir(target_file):
+        print("Task directory already exits: %s" % target_file)
+        err_exit()
+
+    os.mkdir(target_file)
+    pyperclip.copy("open \"%s\"" % target_file)
+    print("copied.")
+
+
+def open_esc_ticket(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    task_files_directory = env_variables['TASK_FILES_DIRECTORY']
+
+    if arg2 is None:
+        print("Search term must be supplied")
+        err_exit()
+
+    search_term = arg2.lower()
+    file_paths = []
+
+    for root, directories, files in os.walk(task_files_directory):
+        for filename in files:
+            if search_term in filename.lower():
+                filepath = os.path.join(root, filename)
+                file_paths.append(filepath)
+
+    if len(file_paths) < 1:
+        print("Not found!!!")
+        return None
+
+    for item in file_paths:
+        print("Found: " + item)
+
+    # command_output = s_run_process_and_get_output("git log -3 %s" % branch_to_use, exit_on_failure=True)
+    # command_output = s_run_process_and_get_output("open \"%s\"" % file_paths[0], False)
+    # print("Result: " + command_output)
+    pyperclip.copy("open \"%s\"" % file_paths[0])
+    print("copied.")
+
+
+def create_new_task(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    task_files_directory = env_variables['TASK_FILES_DIRECTORY']
+
+    if not os.path.isdir(task_files_directory):
+        print("Task files directory: %s doesn't exists" % task_files_directory)
+        err_exit()
+
+    sample_file = "sample.rtf"
+    sample_file_path = os.path.join(task_files_directory, sample_file)
+
+    if not os.path.isfile(sample_file_path):
+        print("Sample file doesn't exists: %s" % sample_file_path)
+        err_exit()
+
+    if arg2 is None:
+        print("Target filename must be supplied")
+        err_exit()
+
+    print("Supplied target file name: %s" % arg2)
+    target_file = os.path.join(task_files_directory, arg2)
+    if os.path.isfile(target_file):
+        print("Task file already exits: %s" % target_file)
+        err_exit()
+
+    with open(sample_file_path, 'rb') as read_handle:
+        with open(target_file, 'wb') as write_handle:
+            contents = read_handle.read()
+            write_handle.write(contents)
+
+    open_file_in_editor(target_file, EDITOR_ATOM)
 
 
 def run_rbt_utility(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -649,11 +772,14 @@ def ensure_no_staged_file_present():
         err_exit()
 
 
-def is_safe_to_amend():
+def is_safe_to_amend(params):
     branch_to_use = get_current_branch()
     if branch_to_use in ["master", "dev/staging", "staging"]:
         print("cannot amend to this branch: " + branch_to_use)
         err_exit()
+
+    if "-f" in params:
+        return True
 
     git_diff = s_run_process_and_get_output('git diff')
     if len(git_diff.strip()) > 0:
@@ -871,7 +997,8 @@ def open_file_in_editor_if_specified(params, file_name):
 
 def open_file_in_editor(file_name, editor):
     if editor == EDITOR_ATOM:
-        s_run_process_and_get_output("/usr/local/bin/atom %s" % file_name)
+        # s_run_process_and_get_output("/usr/local/bin/atom %s" % file_name)
+        s_run_process_and_get_output('open %s' % file_name)
     else:
         s_run_process_and_get_output("vi %s" % file_name)
 
@@ -1097,7 +1224,9 @@ if __name__ == "__main__":
         'INFO_SOURCE_DIRECTORY': pull_env_var('INFO_SOURCE_DIRECTORY'),
         'GITLAB_DOMAIN': pull_env_var('GITLAB_DOMAIN'),
         'GITLAB_API_KEY': pull_env_var('GITLAB_API_KEY'),
-        'JIRA_DOMAIN': pull_env_var('JIRA_DOMAIN')
+        'JIRA_DOMAIN': pull_env_var('JIRA_DOMAIN'),
+        'TASK_FILES_DIRECTORY': pull_env_var('TASK_FILES_DIRECTORY'),
+        'ESC_DIRECTORY': pull_env_var('ESC_DIRECTORY')
     }
 
     primary_operations = [
@@ -1147,7 +1276,13 @@ if __name__ == "__main__":
         get_cmd("gtc", "get remote top commit", "non", get_remote_top_commit, False),
         get_cmd("get-remote-commit", "get remote top commit", "non", get_remote_top_commit, False),
 
-        get_cmd("copy-commit-template", "Copy commit template", "non", copy_commit_template, False)
+        get_cmd("copy-commit-template", "Copy commit template", "non", copy_commit_template, False),
+
+        get_cmd("create-task", "Create new task fine", "non", create_new_task, False),
+        get_cmd("open-task", "Open esc ticket", "non", open_esc_ticket, False),
+
+        get_cmd("create-esc", "Create new esc dir", "non", create_esc, False),
+        get_cmd("open-esc", "Open esc ticket", "non", open_esc, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
