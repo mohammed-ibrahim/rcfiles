@@ -688,8 +688,12 @@ def create_new_task(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         print("Target filename must be supplied")
         err_exit()
 
-    print("Supplied target file name: %s" % arg2)
-    target_file = os.path.join(task_files_directory, arg2)
+    file_name = arg2
+    if not file_name.endswith(".rtf"):
+        file_name = file_name + ".rtf"
+
+    print("Supplied target file name: %s" % file_name)
+    target_file = os.path.join(task_files_directory, file_name)
     if os.path.isfile(target_file):
         print("Task file already exits: %s" % target_file)
         err_exit()
@@ -1190,8 +1194,11 @@ def get_cmd(code, desc, options, fnc, include_timer_in_logs):
 def display_primary_operations(primary_operations):
     primary_operation_codes = [x['code'] for x in primary_operations]
     print("usage: :: a [%s]" % (",".join(primary_operation_codes)))
+    index = 1
     for cmd in primary_operations:
-        print("\t\t%s \t\t[%s]" % (cmd['code'], cmd['desc']))
+        # print("\t\t%s \t\t[%s]" % (cmd['code'], cmd['desc']))
+        print("\t%s\t%s :: %s" % (str(index).ljust(5), cmd['code'].ljust(20), cmd['desc']))
+        index = index + 1
 
 
 def get_param(index):
@@ -1207,6 +1214,17 @@ def get_params():
         cmd = sys.argv[i]
         cmd_list.append(cmd)
     return cmd_list
+
+
+def is_integer(text):
+    if text is None:
+        return False
+
+    try:
+        int(text)
+        return True
+    except ValueError:
+        flag = False
 
 
 # __________                                             ___________ __
@@ -1278,20 +1296,39 @@ if __name__ == "__main__":
 
         get_cmd("copy-commit-template", "Copy commit template", "non", copy_commit_template, False),
 
-        get_cmd("create-task", "Create new task fine", "non", create_new_task, False),
-        get_cmd("open-task", "Open esc ticket", "non", open_esc_ticket, False),
+        get_cmd("create-task-rtf", "Create new task fine", "non", create_new_task, False),
+        get_cmd("open-task-rtf", "Open esc ticket", "non", open_esc_ticket, False),
 
-        get_cmd("create-esc", "Create new esc dir", "non", create_esc, False),
-        get_cmd("open-esc", "Open esc ticket", "non", open_esc, False)
+        get_cmd("create-esc-dir", "Create new esc dir", "non", create_esc, False),
+        get_cmd("open-esc-dir", "Open esc ticket", "non", open_esc, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
     mode = get_param(1)
-    if mode is None or mode not in primary_operation_codes:
-        display_primary_operations(primary_operations)
-        err_exit()
 
-    index = primary_operation_codes.index(mode)
+    index = None
+
+    if is_integer(mode):
+        index = int(mode) - 1
+        total_size = len(primary_operation_codes)
+
+        min_display_index = 1
+        max_display_index = total_size
+
+        min_prog_index = 0
+        max_prog_index = total_size - 1
+
+        if index < min_prog_index or index > max_prog_index:
+            print("Min: {0} Max: {1}".format(min_display_index, max_display_index))
+            err_exit()
+
+    else:
+        if mode is None or mode not in primary_operation_codes:
+            display_primary_operations(primary_operations)
+            err_exit()
+
+        index = primary_operation_codes.index(mode)
+
     arg = primary_operations[index]
     fn = arg['fnc']
     include_timer_in_logs = arg['include_timer_in_logs']
