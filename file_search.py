@@ -30,7 +30,7 @@ def get_term():
         print('Usage: <program> <search_string> [<directory>]')
         sys.exit()
 
-    directory = './'
+    directory = os.getcwd()
 
     if len(sys.argv) == 3:
         directory = sys.argv[2]

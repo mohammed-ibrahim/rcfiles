@@ -11,6 +11,7 @@ import requests
 import webbrowser
 import uuid
 import urllib
+import base64
 
 
 # _________                         __                 __
@@ -503,10 +504,41 @@ DOCKER_LOGS_REROUTE_COMMAND = "docker logs %s 2>&1 > ~/out.txt"
 
 DOCKER_FORMAT = NEW_LINE + NEW_LINE + DOCKER_SSH_COMMAND + NEW_LINE + DOCKER_LOGS_COMMAND + NEW_LINE + DOCKER_LOGS_TAIL_COMMAND + NEW_LINE + DOCKER_LOGS_REROUTE_COMMAND + NEW_LINE + NEW_LINE
 
+DOCKER_HELPER = """
+--list-all
+docker ps
+
+--ssh-into-docker
+docker exec -it $DC /bin/bash
+
+--copy-file
+docker cp <containerId>:/file/path/in/container/file /host/local/path/file
+
+--check-for-exited-docker
+docker ps -f "status=exited"
+
+--clear-docker-cache
+docker system prune
+
+--inter-docker-reachability
+curl -kv telnet://<dockername>:1433
+curl -kv telnet://mssql:1433
+
+--docker-logs
+docker logs 33c425bc7bb8 2>&1 > ~/out.txt
+
+--login-as-root
+docker container exec -it --user root <container-id> /bin/bash
+
+
+--docker-history
+docker history <container>|<image> --no-trunc
+"""
 
 def docker_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     if arg2 is None:
         print("Please supply keyword to search")
+        print(DOCKER_HELPER)
         err_exit()
 
     client = docker.from_env()
@@ -617,6 +649,64 @@ def open_esc(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     return None
 
+
+def copy_password_from_json_file(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+
+    if arg2 is None:
+        print("search term must be specified")
+        err_exit()
+
+    pass_json_file = env_variables['PWD_JSON_FILE']
+    json_file_contents = read_file_contents(pass_json_file)
+    json_content = json.loads(json_file_contents)
+
+    key = arg2
+    print("key: " + key)
+
+    if key not in json_content:
+        print("Key not found for secret: key: " + key)
+        keysList = list(json_content.keys())
+        print("Available keys: ")
+        for key in keysList:
+            print(key)
+        err_exit()
+
+    # secret = base64.b64decode(json_content[key])
+    pyperclip.copy(json_content[key])
+    print("secret copied to clipboard.")
+    return None
+
+
+MVN_MESSAGE = """
+mvn dependency:tree
+
+mvn dependency:tree 2>&1 > ./mvn-dependency-tree.txt
+
+mvn clean install -DskipTests=true -Dcheckstyle.skip -Dpmd.skip=true -Dsonar.skip 
+
+mvn clean install -DskipTests=true -Dcheckstyle.skip -Dpmd.skip=true -Dsonar.skip -pl '!dir1','!dir2'
+
+mvn clean install -DskipTests=true -Dcheckstyle.skip -Dpmd.skip=true -Dsonar.skip -pl 'project-dir-to-build'
+"""
+def print_maven_commands(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    print(MVN_MESSAGE)
+
+
+GIT_MESSAGE = """
+--diff-between-local-and-remote
+
+
+git log origin/master..master
+git log origin/dev/staging..dev/staging
+
+
+
+--diff-between-two-branches
+
+git diff origin/branch1 origin/branch2
+"""
+def print_git_commands(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    print(GIT_MESSAGE)
 
 def create_esc(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     esc_dir = env_variables['ESC_DIRECTORY']
@@ -1244,7 +1334,8 @@ if __name__ == "__main__":
         'GITLAB_API_KEY': pull_env_var('GITLAB_API_KEY'),
         'JIRA_DOMAIN': pull_env_var('JIRA_DOMAIN'),
         'TASK_FILES_DIRECTORY': pull_env_var('TASK_FILES_DIRECTORY'),
-        'ESC_DIRECTORY': pull_env_var('ESC_DIRECTORY')
+        'ESC_DIRECTORY': pull_env_var('ESC_DIRECTORY'),
+        'PWD_JSON_FILE': pull_env_var('PWD_JSON_FILE')
     }
 
     primary_operations = [
@@ -1296,11 +1387,14 @@ if __name__ == "__main__":
 
         get_cmd("copy-commit-template", "Copy commit template", "non", copy_commit_template, False),
 
-        get_cmd("create-task-rtf", "Create new task fine", "non", create_new_task, False),
-        get_cmd("open-task-rtf", "Open esc ticket", "non", open_esc_ticket, False),
+        get_cmd("crtf", "Create new task fine", "non", create_new_task, False),
+        get_cmd("ortf", "Open esc ticket", "non", open_esc_ticket, False),
 
-        get_cmd("create-esc-dir", "Create new esc dir", "non", create_esc, False),
-        get_cmd("open-esc-dir", "Open esc ticket", "non", open_esc, False)
+        get_cmd("cdir", "Create new esc dir", "non", create_esc, False),
+        get_cmd("odir", "Open esc ticket", "non", open_esc, False),
+        get_cmd("pwd", "Copy password", "non", copy_password_from_json_file, False),
+        get_cmd("mvn", "Maven helper", "non", print_maven_commands, False),
+        get_cmd("git", "Print git helper commands", "non", print_git_commands, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
