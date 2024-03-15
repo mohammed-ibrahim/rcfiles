@@ -478,23 +478,36 @@ def branch_out_from_master(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     master_branch_name = 'master'
     checkout_and_pull_branch(master_branch_name)
 
-    local_commmit_id = get_head_commit_for_branch(master_branch_name)
-    remote_commit_details = get_remote_branch_top_commit_details(master_branch_name, env_variables)
+    if not ignore_remote_call_to_repo(env_variables, os.getcwd()):
+        local_commmit_id = get_head_commit_for_branch(master_branch_name)
+        remote_commit_details = get_remote_branch_top_commit_details(master_branch_name, env_variables)
 
-    if remote_commit_details is None:
-        print("Destination branch doesnt exists: " + master_branch_name)
-        err_exit()
+        if remote_commit_details is None:
+            print("Destination branch doesnt exists: " + master_branch_name)
+            err_exit()
 
-    remote_commit_id = remote_commit_details['id']
+        remote_commit_id = remote_commit_details['id']
 
-    if local_commmit_id != remote_commit_id:
-        print("Local commit: %s Remote commit: %s differ for branch: %s" % (
-            local_commmit_id, remote_commit_id, master_branch_name))
-        err_exit()
+        if local_commmit_id != remote_commit_id:
+            print("Local commit: %s Remote commit: %s differ for branch: %s" % (
+                local_commmit_id, remote_commit_id, master_branch_name))
+            err_exit()
 
     s_run_process_and_get_output('git checkout -b %s' % branch_to_use)
     s_run_process_and_get_output('git branch --set-upstream-to=origin/master %s' % branch_to_use)
     print("Branch: %s is ready." % branch_to_use)
+
+
+def ignore_remote_call_to_repo(env_variables, cwd):
+    remote_calls_ignore_list_csv = env_variables['REPO_IGNORE_REMOTE_CALL']
+
+    remote_calls_ignore_list = remote_calls_ignore_list_csv.split(",")
+    for dir in remote_calls_ignore_list:
+        if cwd.startswith(dir):
+            print("Ignoring the repo: %s for remote calls." % cwd)
+            return True
+
+    return False
 
 
 DOCKER_SSH_COMMAND = "docker exec -it %s /bin/bash"
@@ -723,10 +736,19 @@ def create_esc(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     target_file = os.path.join(esc_dir, arg2)
     if os.path.isdir(target_file):
         print("Task directory already exits: %s" % target_file)
+        open_command = "open \"%s\""  % target_file
+        cd_command = "pushd \"%s\""  % target_file
+        print(open_command)
+        print(cd_command)
+        print("copied.")
         err_exit()
 
     os.mkdir(target_file)
-    pyperclip.copy("open \"%s\"" % target_file)
+    open_command = "open \"%s\""  % target_file
+    cd_command = "pushd \"%s\""  % target_file
+    pyperclip.copy(text2)
+    print(open_command)
+    print(cd_command)
     print("copied.")
 
 
@@ -1335,7 +1357,8 @@ if __name__ == "__main__":
         'JIRA_DOMAIN': pull_env_var('JIRA_DOMAIN'),
         'TASK_FILES_DIRECTORY': pull_env_var('TASK_FILES_DIRECTORY'),
         'ESC_DIRECTORY': pull_env_var('ESC_DIRECTORY'),
-        'PWD_JSON_FILE': pull_env_var('PWD_JSON_FILE')
+        'PWD_JSON_FILE': pull_env_var('PWD_JSON_FILE'),
+        'REPO_IGNORE_REMOTE_CALL': pull_env_var('REPO_IGNORE_REMOTE_CALL')
     }
 
     primary_operations = [
