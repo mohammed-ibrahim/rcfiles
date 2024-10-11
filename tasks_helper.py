@@ -172,10 +172,10 @@ def open_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 
     required_url = None
     if current_branch in ["master", "dev/staging"] or force_plain_branch:
-        required_url = "%s/-/commits/%s" % (get_repo_url(), current_branch)
+        required_url = "%s/tree/%s" % (get_repo_url(), current_branch)
     else:
         current_user = get_current_user()
-        required_url = "%s/-/commits/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
+        required_url = "%s/tree/topic/%s/%s" % (get_repo_url(), current_user, current_branch)
 
     open_url_in_browser(required_url)
 
@@ -746,7 +746,7 @@ def create_esc(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     os.mkdir(target_file)
     open_command = "open \"%s\""  % target_file
     cd_command = "pushd \"%s\""  % target_file
-    pyperclip.copy(text2)
+    # pyperclip.copy(text2)
     print(open_command)
     print(cd_command)
     print("copied.")
