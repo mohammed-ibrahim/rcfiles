@@ -48,35 +48,37 @@ HR = "--------------------------------------------------------------------------
 
 
 update_branch_template = """
-----------------------------------------------------------------------------------------
-RB new                  ::   rbt post -g -o
-RB Update               ::   rbt post -r <review-id> <latest-commit-id>
+---------------------------Upstream---------------------------
+origin/topic/{user}/{branch}
+{repo_url}/commits/topic/{user}/{branch}
 
-Jenkins                 ::   origin/topic/{user}/{branch}
-Remote Branch           ::   {repo_url}/commits/topic/{user}/{branch}
+---------------------------Upstream---------------------------   
+git branch --set-upstream-to=origin/master {branch}
 
-Upstream                ::   git branch --set-upstream-to=origin/master {branch}
-
+---------------------------Amend---------------------------
 Amend                   ::   git commit --amend
 Amend no-edid           ::   git commit --amend --no-edit
 
-Update commit           ::   git pull && git rebase
+---------------------------Update commit---------------------------
+git pull --rebase
 
-Push to remote branch   ::   a shead &&
-                             git push origin :topic/{user}/{branch} &&
-                             git push origin HEAD:topic/{user}/{branch}
+---------------------------Push to remote branch---------------------------   
+git push origin HEAD:topic/{user}/{branch}
+git push origin HEAD:topic/{user}/{branch} -f
 
-Merge Staging           ::   git checkout dev/staging &&
-                             git pull origin dev/staging
-                             git merge origin/topic/{user}/{branch} --no-commit --no-ff
-                             git commit
-                             git push
+---------------------------Merge Staging---------------------------   
+git checkout dev/staging &&
+git pull origin dev/staging
+git merge origin/topic/{user}/{branch} --no-commit --no-ff
+git commit
+git push
 
-Merge Master            ::   git checkout master &&
-                             git pull origin master
-                             git merge origin/topic/{user}/{branch} --no-commit --no-ff
-                             git commit
-                             git push
+---------------------------Merge Master---------------------------
+git checkout master &&
+git pull origin master
+git merge origin/topic/{user}/{branch} --no-commit --no-ff
+git commit
+git push
 ----------------------------------------------------------------------------------------
 """
 
