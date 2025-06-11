@@ -115,7 +115,7 @@ def copy_full_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     if branch_to_use is None:
         branch_to_use = get_current_branch()
 
-    jenkin_cmd = "origin/topic/%s/%s" % (get_current_user(), branch_to_use)
+    jenkin_cmd = "topic/%s/%s" % (get_current_user(), branch_to_use)
     pyperclip.copy(jenkin_cmd)
     print("Copied: %s" % jenkin_cmd)
 
@@ -407,34 +407,15 @@ def safe_push_remote_branch(params, arg2, arg3, arg4, arg5, arg6, env_variables)
         print("Cannot auto push to this branch: " + branch_to_use)
         err_exit()
 
-    if "-f" != arg2:
-        ensure_no_git_diff_or_staged_files_present()
+    template = """
+    git push origin HEAD:topic/{user}/{branch}
+    git push origin HEAD:topic/{user}/{branch} -f"""
 
-    remote_branch_details = get_remote_branch_top_commit_details(branch_to_use, env_variables)
-    output = "None"
+    command = txt_substitute(template, {'user': get_current_user(), 'branch': branch_to_use})
 
-    delete_template = "git push origin :topic/{user}/{branch}"
-    delete_command = txt_substitute(delete_template, {'user': get_current_user(), 'branch': branch_to_use})
-
-    push_template = "git push origin HEAD:topic/{user}/{branch}"
-    push_command = txt_substitute(push_template, {'user': get_current_user(), 'branch': branch_to_use})
-
-    output = "null"
-    if remote_branch_details is None:
-        # Only Push
-        print("Only pushing, no existing branch found :: " + push_command)
-        output = s_run_process_and_get_output(push_command)
-    else:
-        # force push
-        # output1 = s_run_process_and_get_output(delete_command)
-        # output2 = s_run_process_and_get_output(push_command)
-        # output = output1 + "\n\n\n" + output2
-
-        force_push_command = push_command + " -f"
-        print("Force pushing as existing branch found :: " + force_push_command)
-        output = s_run_process_and_get_output(force_push_command)
-
-    print("Command output: %s" % output)
+    copy_text = txt_substitute("git push origin HEAD:topic/{user}/{branch} -f", {'user': get_current_user(), 'branch': branch_to_use})
+    pyperclip.copy(copy_text)
+    print("Command output: %s" % command)
 
 
 def coverity_push_helper(params, arg2, arg3, arg4, arg5, arg6, env_variables):
@@ -692,6 +673,13 @@ def copy_password_from_json_file(params, arg2, arg3, arg4, arg5, arg6, env_varia
     return None
 
 
+def dump_file(file_path):
+    print("Contents from: " + file_path)
+    with open(file_path, 'r') as read_handle:
+        contents = read_handle.read()
+        print(contents)
+
+
 MVN_MESSAGE = """
 mvn dependency:tree
 
@@ -702,8 +690,19 @@ mvn clean install -DskipTests=true -Dcheckstyle.skip -Dpmd.skip=true -Dsonar.ski
 mvn clean install -DskipTests=true -Dcheckstyle.skip -Dpmd.skip=true -Dsonar.skip -pl '!dir1','!dir2'
 
 mvn clean install -DskipTests=true -Dcheckstyle.skip -Dpmd.skip=true -Dsonar.skip -pl 'project-dir-to-build'
+
+mvn help:effective-pom
 """
 def print_maven_commands(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    
+    local_build_commands_path = os.path.join(env_variables['LOCAL_BUILD_COMMANDS'], "mvn")
+    files = []
+
+    for file in os.listdir(local_build_commands_path):
+        files.append(os.path.join(local_build_commands_path, file))
+    
+    for file in files:
+        dump_file(file)
     print(MVN_MESSAGE)
 
 
@@ -722,6 +721,10 @@ git diff origin/branch1 origin/branch2
 """
 def print_git_commands(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     print(GIT_MESSAGE)
+
+def print_kinit_commands(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    kinit_file_contents = os.path.join(env_variables['LOCAL_BUILD_COMMANDS'], "kinit.txt")
+    dump_file(kinit_file_contents)
 
 def create_esc(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     esc_dir = env_variables['ESC_DIRECTORY']
@@ -1360,7 +1363,8 @@ if __name__ == "__main__":
         'TASK_FILES_DIRECTORY': pull_env_var('TASK_FILES_DIRECTORY'),
         'ESC_DIRECTORY': pull_env_var('ESC_DIRECTORY'),
         'PWD_JSON_FILE': pull_env_var('PWD_JSON_FILE'),
-        'REPO_IGNORE_REMOTE_CALL': pull_env_var('REPO_IGNORE_REMOTE_CALL')
+        'REPO_IGNORE_REMOTE_CALL': pull_env_var('REPO_IGNORE_REMOTE_CALL'),
+        'LOCAL_BUILD_COMMANDS': pull_env_var('LOCAL_BUILD_COMMANDS')
     }
 
     primary_operations = [
@@ -1398,7 +1402,7 @@ if __name__ == "__main__":
         get_cmd("am", "Copy the amend code", "non", copy_amend, False),
         get_cmd("ame", "Copy the amend code without edit", "non", copy_amend_no_edit, False),
         get_cmd("rbt", "Review board utility", "non", run_rbt_utility, False),
-        get_cmd("push", "Review board utility", "non", safe_push_remote_branch, True),
+        get_cmd("push", "Review board utility", "non", safe_push_remote_branch, False),
         get_cmd("cov", "Coverity-push-helper", "non", coverity_push_helper, True),
         get_cmd("merge-staging", "Merge to Staging", "non", merge_to_staging, True),
         get_cmd("merge-master", "Merge to Master", "non", merge_to_master, True),
@@ -1419,7 +1423,9 @@ if __name__ == "__main__":
         get_cmd("odir", "Open esc ticket", "non", open_esc, False),
         get_cmd("pwd", "Copy password", "non", copy_password_from_json_file, False),
         get_cmd("mvn", "Maven helper", "non", print_maven_commands, False),
-        get_cmd("git", "Print git helper commands", "non", print_git_commands, False)
+        get_cmd("git", "Print git helper commands", "non", print_git_commands, False),
+
+        get_cmd("kinit", "Kinit commands", "non", print_kinit_commands, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
