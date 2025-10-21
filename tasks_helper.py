@@ -726,6 +726,42 @@ def print_kinit_commands(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     kinit_file_contents = os.path.join(env_variables['LOCAL_BUILD_COMMANDS'], "kinit.txt")
     dump_file(kinit_file_contents)
 
+def git_status_format(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    result = run_process_and_get_output([env_variables['GIT_EXECUTABLE_LOC'], "status"], True)
+    list_of_files = extract_git_files(result)
+    print("\n\n\n\n--------------------------------------------------------\n\n\n\n")
+    print(" ".join(list_of_files))
+    print("\n\n\n\n--------------------------------------------------------\n\n\n\n")
+    print(" \\\n".join(list_of_files))
+    print("\n\n\n\n--------------------------------------------------------\n\n\n\n")
+
+
+def extract_git_files(git_status_output: str) -> list[str]:
+    files = []
+
+    # Match lines that start with 'modified:' or are indented (for untracked files)
+    pattern = re.compile(r'^\s*(?:modified:\s+)?(.+)$', re.MULTILINE)
+
+    for match in pattern.finditer(git_status_output):
+        file_path = match.group(1).strip()
+
+        # Skip non-file lines or headers
+        if (
+                not file_path
+                or file_path.startswith("(")
+                or file_path.startswith("On branch")
+                or ":" in file_path and not file_path.startswith("modified:")
+                or file_path.lower().startswith("changes ")
+                or file_path.lower().startswith("untracked files")
+                or file_path.lower().startswith("no changes")
+        ):
+            continue
+
+        files.append(file_path)
+
+    return files
+
+
 def create_esc(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     esc_dir = env_variables['ESC_DIRECTORY']
 
@@ -1364,7 +1400,8 @@ if __name__ == "__main__":
         'ESC_DIRECTORY': pull_env_var('ESC_DIRECTORY'),
         'PWD_JSON_FILE': pull_env_var('PWD_JSON_FILE'),
         'REPO_IGNORE_REMOTE_CALL': pull_env_var('REPO_IGNORE_REMOTE_CALL'),
-        'LOCAL_BUILD_COMMANDS': pull_env_var('LOCAL_BUILD_COMMANDS')
+        'LOCAL_BUILD_COMMANDS': pull_env_var('LOCAL_BUILD_COMMANDS'),
+        'GIT_EXECUTABLE_LOC': pull_env_var('GIT_EXECUTABLE_LOC')
     }
 
     primary_operations = [
@@ -1425,7 +1462,8 @@ if __name__ == "__main__":
         get_cmd("mvn", "Maven helper", "non", print_maven_commands, False),
         get_cmd("git", "Print git helper commands", "non", print_git_commands, False),
 
-        get_cmd("kinit", "Kinit commands", "non", print_kinit_commands, False)
+        get_cmd("kinit", "Kinit commands", "non", print_kinit_commands, False),
+        get_cmd("gs", "Get git status formatted", "non", git_status_format, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
