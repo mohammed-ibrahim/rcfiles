@@ -708,6 +708,9 @@ def print_maven_commands(params, arg2, arg3, arg4, arg5, arg6, env_variables):
 def download_and_extract_bridge(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     from download_and_extract import download_and_extract
     temp_dir = download_and_extract(arg2, env_variables['LOCAL_TMP_DIR'])
+    print("--------------------------------------------------------------")
+    print(temp_dir)
+    print("--------------------------------------------------------------")
     run_process_and_get_output(["/usr/bin/open", "-a", "finder", temp_dir])
 
 def open_temp_directory(params, arg2, arg3, arg4, arg5, arg6, env_variables):

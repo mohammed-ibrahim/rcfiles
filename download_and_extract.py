@@ -21,6 +21,12 @@ def download_and_extract(url, temp_dir):
     sub_dir = os.path.join(temp_dir, sub_dir_name)
     os.makedirs(sub_dir, exist_ok=True)
 
+    # 1.b Write the link to link.txt
+    link_file = os.path.join(sub_dir, "link.txt")
+    with open(link_file, 'w', encoding='utf-8') as link_file_ref:
+        link_file_ref.write(url)
+
+
     # 2. Download the zip file
     file_name = os.path.basename(unquote(urlparse(url).path)) or "download.zip"
     if not file_name.lower().endswith(".zip"):
