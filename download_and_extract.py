@@ -5,6 +5,7 @@ from datetime import datetime
 from urllib.parse import urlparse, unquote
 from urllib.request import urlopen, Request
 import ssl
+import time
 
 
 def download_and_extract(url, temp_dir):
@@ -29,7 +30,15 @@ def download_and_extract(url, temp_dir):
     request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
     ssl_ctx = ssl._create_unverified_context()
     with urlopen(request, context=ssl_ctx) as response, open(zip_path, "wb") as out_file:
-        shutil.copyfileobj(response, out_file)
+        total = int(response.headers.get("Content-Length", 0))
+        done, last = 0, time.time()
+        while chunk := response.read(64 * 1024):
+            out_file.write(chunk)
+            done += len(chunk)
+            if time.time() - last >= 1:
+                pct = f" / {total / 1024 / 1024:.1f} MB ({done * 100 // total}%)" if total else ""
+                print(f"Downloaded {done / 1024 / 1024:.1f} MB{pct}")
+                last = time.time()
     print(f"Downloaded: {zip_path}")
 
     # 3. Extract the zip into the sub-directory
