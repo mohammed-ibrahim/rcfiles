@@ -17,7 +17,7 @@ def download_and_extract(url, temp_dir):
     Returns the path of the created sub-directory.
     """
     # 1. Create sub-directory named DD-MMM-YYYY-HH-MM (e.g. 08-OCT-2026-11-35)
-    sub_dir_name = datetime.now().strftime("%d-%b-%Y-%H-%M").upper()
+    sub_dir_name = datetime.now().strftime("%d-%b-%Y-%H-%M-%S").upper()
     sub_dir = os.path.join(temp_dir, sub_dir_name)
     os.makedirs(sub_dir, exist_ok=True)
 

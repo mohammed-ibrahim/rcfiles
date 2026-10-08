@@ -718,7 +718,7 @@ def open_temp_directory(params, arg2, arg3, arg4, arg5, arg6, env_variables):
     run_process_and_get_output(["/usr/bin/open", "-a", "finder", temp_dir])
 
 def create_temp_sub_directory(params, arg2, arg3, arg4, arg5, arg6, env_variables):
-    sub_dir_name = datetime.datetime.now().strftime("%d-%b-%Y-%H-%M").upper()
+    sub_dir_name = datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S").upper()
     temp_dir = env_variables['LOCAL_TMP_DIR']
     sub_dir = os.path.join(temp_dir, sub_dir_name)
     os.makedirs(sub_dir, exist_ok=True)
