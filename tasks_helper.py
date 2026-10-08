@@ -710,6 +710,16 @@ def download_and_extract_bridge(params, arg2, arg3, arg4, arg5, arg6, env_variab
     temp_dir = download_and_extract(arg2, env_variables['LOCAL_TMP_DIR'])
     run_process_and_get_output(["/usr/bin/open", "-a", "finder", temp_dir])
 
+def open_temp_directory(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    temp_dir = env_variables['LOCAL_TMP_DIR']
+    run_process_and_get_output(["/usr/bin/open", "-a", "finder", temp_dir])
+
+def create_temp_sub_directory(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    sub_dir_name = datetime.datetime.now().strftime("%d-%b-%Y-%H-%M").upper()
+    temp_dir = env_variables['LOCAL_TMP_DIR']
+    sub_dir = os.path.join(temp_dir, sub_dir_name)
+    os.makedirs(sub_dir, exist_ok=True)
+    run_process_and_get_output(["/usr/bin/open", "-a", "finder", sub_dir])
 
 GIT_MESSAGE = """
 --diff-between-local-and-remote
@@ -1471,7 +1481,10 @@ if __name__ == "__main__":
         get_cmd("kinit", "Kinit commands", "non", print_kinit_commands, False),
         get_cmd("gs", "Get git status formatted", "non", git_status_format, False),
         get_cmd("dwd", "Download and extract", "non", download_and_extract_bridge, False),
-        get_cmd("download", "Download and extract", "non", download_and_extract_bridge, False)
+        get_cmd("download", "Download and extract", "non", download_and_extract_bridge, False),
+        get_cmd("tmp", "Open Temp Directory", "non", open_temp_directory, False),
+        get_cmd("temp", "Open Temp Directory", "non", open_temp_directory, False),
+        get_cmd("ctemp", "Create new Temp Sub Directory", "non", create_temp_sub_directory, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
