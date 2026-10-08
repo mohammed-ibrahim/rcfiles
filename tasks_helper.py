@@ -705,6 +705,11 @@ def print_maven_commands(params, arg2, arg3, arg4, arg5, arg6, env_variables):
         dump_file(file)
     print(MVN_MESSAGE)
 
+def download_and_extract_bridge(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    from download_and_extract import download_and_extract
+    temp_dir = download_and_extract(arg2, env_variables['LOCAL_TMP_DIR'])
+    run_process_and_get_output(["/usr/bin/open", "-a", "finder", temp_dir])
+
 
 GIT_MESSAGE = """
 --diff-between-local-and-remote
@@ -1401,7 +1406,8 @@ if __name__ == "__main__":
         'PWD_JSON_FILE': pull_env_var('PWD_JSON_FILE'),
         'REPO_IGNORE_REMOTE_CALL': pull_env_var('REPO_IGNORE_REMOTE_CALL'),
         'LOCAL_BUILD_COMMANDS': pull_env_var('LOCAL_BUILD_COMMANDS'),
-        'GIT_EXECUTABLE_LOC': pull_env_var('GIT_EXECUTABLE_LOC')
+        'GIT_EXECUTABLE_LOC': pull_env_var('GIT_EXECUTABLE_LOC'),
+        'LOCAL_TMP_DIR': pull_env_var('LOCAL_TMP_DIR')
     }
 
     primary_operations = [
@@ -1463,7 +1469,9 @@ if __name__ == "__main__":
         get_cmd("git", "Print git helper commands", "non", print_git_commands, False),
 
         get_cmd("kinit", "Kinit commands", "non", print_kinit_commands, False),
-        get_cmd("gs", "Get git status formatted", "non", git_status_format, False)
+        get_cmd("gs", "Get git status formatted", "non", git_status_format, False),
+        get_cmd("dwd", "Download and extract", "non", download_and_extract_bridge, False),
+        get_cmd("download", "Download and extract", "non", download_and_extract_bridge, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
