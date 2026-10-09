@@ -42,8 +42,12 @@ def download_and_extract(url, temp_dir):
             out_file.write(chunk)
             done += len(chunk)
             if time.time() - last >= 1:
-                pct = f" / {total / 1024 / 1024:.1f} MB ({done * 100 // total}%)" if total else ""
-                print(f"Downloaded {done / 1024 / 1024:.1f} MB{pct}")
+                if total:
+                    bars = done * 20 // total
+                    print(
+                        f"[{'|' * bars}{'.' * (20 - bars)}] {done * 100 // total}%  {done / 1024 / 1024:.1f} / {total / 1024 / 1024:.1f} MB")
+                else:
+                    print(f"Downloaded {done / 1024 / 1024:.1f} MB")
                 last = time.time()
     print(f"Downloaded: {zip_path}")
 
