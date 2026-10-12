@@ -6,6 +6,7 @@ from urllib.parse import urlparse, unquote
 from urllib.request import urlopen, Request
 import ssl
 import time
+from write_tree import write_tree
 
 
 def download_and_extract(url, temp_dir):
@@ -68,6 +69,7 @@ def download_and_extract(url, temp_dir):
                     jf.extractall(jar_out_dir)
                 print(f"Extracted jar: {jar_path} -> {jar_out_dir}")
 
+    write_tree(sub_dir, 8)
     return sub_dir
 
 
