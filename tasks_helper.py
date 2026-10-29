@@ -724,6 +724,26 @@ def create_temp_sub_directory(params, arg2, arg3, arg4, arg5, arg6, env_variable
     os.makedirs(sub_dir, exist_ok=True)
     run_process_and_get_output(["/usr/bin/open", "-a", "finder", sub_dir])
 
+def extract_fat_jar(params, arg2, arg3, arg4, arg5, arg6, env_variables):
+    sub_dir_name = datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S").upper()
+    temp_dir = env_variables['LOCAL_TMP_DIR']
+    sub_dir = os.path.join(temp_dir, sub_dir_name)
+    os.makedirs(sub_dir, exist_ok=True)
+    jar_file_path = arg2
+    if jar_file_path is None:
+        print("Jar path not provided")
+        err_exit()
+
+    if not os.path.isfile(jar_file_path):
+        print("Not a regular file " + jar_file_path)
+        err_exit()
+
+    print("Extracting: ", jar_file_path)
+    from extract_fat_jar import extract_fat_jar
+    extract_fat_jar(jar_file_path, sub_dir)
+    print("Jar extracted at location: ", jar_file_path)
+    print("open ", sub_dir)
+
 GIT_MESSAGE = """
 --diff-between-local-and-remote
 
@@ -1487,7 +1507,8 @@ if __name__ == "__main__":
         get_cmd("download", "Download and extract", "non", download_and_extract_bridge, False),
         get_cmd("tmp", "Open Temp Directory", "non", open_temp_directory, False),
         get_cmd("temp", "Open Temp Directory", "non", open_temp_directory, False),
-        get_cmd("ctemp", "Create new Temp Sub Directory", "non", create_temp_sub_directory, False)
+        get_cmd("ctemp", "Create new Temp Sub Directory", "non", create_temp_sub_directory, False),
+        get_cmd("jar", "Extract fat jar", "non", extract_fat_jar, False)
     ]
 
     primary_operation_codes = [x['code'] for x in primary_operations]
